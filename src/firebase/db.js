@@ -11,6 +11,7 @@ import {
   getDocs,
   serverTimestamp,
   Timestamp,
+  increment,
 } from 'firebase/firestore'
 import { db } from './config'
 
@@ -32,6 +33,61 @@ export async function createUser(uid, data) {
 
 export async function updateUser(uid, data) {
   await updateDoc(doc(db, 'users', uid), data)
+}
+
+// ─── Budget ───────────────────────────────────────────────────────────────────
+// Stored on the couple doc as `monthlyBudget` (a number, INR)
+
+export async function setBudget(coupleId, amount) {
+  await updateDoc(doc(db, 'couples', coupleId), { monthlyBudget: amount })
+}
+
+// ─── OTP Rate Limiting ───────────────────────────────────────────────────────
+// Stores send attempts per phone. Max 5 sends per 24 hours.
+const OTP_MAX_PER_DAY = 5
+const OTP_WINDOW_MS   = 24 * 60 * 60 * 1000 // 24 hours
+
+function phoneToDocId(phone) {
+  return phone.replace(/\+/g, '').replace(/\s/g, '')
+}
+
+export async function checkOtpRateLimit(phone) {
+  const ref  = doc(db, 'otpLimits', phoneToDocId(phone))
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return // no record → allow
+
+  const { windowStart, count } = snap.data()
+  const start = windowStart?.toDate ? windowStart.toDate().getTime() : 0
+  const now   = Date.now()
+
+  if (now - start < OTP_WINDOW_MS && count >= OTP_MAX_PER_DAY) {
+    const resetAt = new Date(start + OTP_WINDOW_MS)
+    const mins = Math.ceil((resetAt.getTime() - now) / 60000)
+    throw Object.assign(
+      new Error(`Too many OTP requests. Try again in ${mins} minute(s).`),
+      { code: 'auth/rate-limited' }
+    )
+  }
+}
+
+export async function recordOtpSend(phone) {
+  const ref  = doc(db, 'otpLimits', phoneToDocId(phone))
+  const snap = await getDoc(ref)
+
+  if (!snap.exists()) {
+    await setDoc(ref, { windowStart: serverTimestamp(), count: 1 })
+    return
+  }
+
+  const { windowStart } = snap.data()
+  const start = windowStart?.toDate ? windowStart.toDate().getTime() : 0
+
+  if (Date.now() - start >= OTP_WINDOW_MS) {
+    // Reset window
+    await setDoc(ref, { windowStart: serverTimestamp(), count: 1 })
+  } else {
+    await updateDoc(ref, { count: increment(1) })
+  }
 }
 
 // ─── Couple ───────────────────────────────────────────────────────────────────
@@ -111,4 +167,13 @@ export async function getExpenses(coupleId) {
 
 export async function deleteExpense(expenseId) {
   await deleteDoc(doc(db, 'expenses', expenseId))
+}
+
+export async function updateExpense(expenseId, data) {
+  await updateDoc(doc(db, 'expenses', expenseId), {
+    amount:      data.amount,
+    category:    data.category,
+    description: data.description || '',
+    date:        Timestamp.fromDate(new Date(data.date)),
+  })
 }

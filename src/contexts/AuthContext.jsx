@@ -8,6 +8,7 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(undefined) // undefined = loading
   const [userProfile, setUserProfile]   = useState(null)
+  const [authLoading, setAuthLoading]   = useState(true)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
@@ -18,6 +19,7 @@ export function AuthProvider({ children }) {
       } else {
         setUserProfile(null)
       }
+      setAuthLoading(false)
     })
     return unsub
   }, [])
@@ -28,7 +30,7 @@ export function AuthProvider({ children }) {
     setUserProfile(profile)
   }
 
-  const loading = firebaseUser === undefined
+  const loading = authLoading
 
   return (
     <AuthContext.Provider value={{ firebaseUser, userProfile, loading, refreshProfile }}>

@@ -1,34 +1,74 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useExpenses } from '../contexts/ExpenseContext'
+import { useAuth } from '../contexts/AuthContext'
 import { CATEGORIES } from '../utils/categories'
-import { toInputDate } from '../utils/formatUtils'
+import { toInputDate, formatINR } from '../utils/formatUtils'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
+import Spinner from '../components/common/Spinner'
 
-export default function AddExpensePage() {
+export default function EditExpensePage() {
+  const { id }   = useParams()
   const navigate = useNavigate()
-  const { addNew } = useExpenses()
+  const { expenses, edit } = useExpenses()
+  const { userProfile }    = useAuth()
 
-  const [amount, setAmount]       = useState('')
-  const [category, setCategory]   = useState('')
-  const [description, setDesc]    = useState('')
-  const [date, setDate]           = useState(toInputDate(new Date()))
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
+  const expense = expenses.find(e => e.id === id)
+
+  const [amount, setAmount]     = useState('')
+  const [category, setCategory] = useState('')
+  const [description, setDesc]  = useState('')
+  const [date, setDate]         = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
+
+  useEffect(() => {
+    if (expense) {
+      setAmount(String(expense.amount))
+      setCategory(expense.category)
+      setDesc(expense.description || '')
+      setDate(toInputDate(expense.date))
+    }
+  }, [expense])
+
+  // Guard: not found or not owner
+  if (!expense) {
+    return (
+      <div className="min-h-screen bg-karcha-bg flex flex-col items-center justify-center px-6">
+        <p className="text-4xl mb-3">🔍</p>
+        <p className="font-semibold text-karcha-text">Expense not found.</p>
+        <button onClick={() => navigate('/expenses')} className="mt-4 text-primary-600 font-semibold text-sm">
+          ← Back to Expenses
+        </button>
+      </div>
+    )
+  }
+
+  if (expense.paidBy !== userProfile?.id) {
+    return (
+      <div className="min-h-screen bg-karcha-bg flex flex-col items-center justify-center px-6">
+        <p className="text-4xl mb-3">🔒</p>
+        <p className="font-semibold text-karcha-text">You can only edit your own expenses.</p>
+        <button onClick={() => navigate('/expenses')} className="mt-4 text-primary-600 font-semibold text-sm">
+          ← Back to Expenses
+        </button>
+      </div>
+    )
+  }
 
   async function handleSave() {
     setError('')
     const amt = parseFloat(amount)
-    if (!amt || amt <= 0)  { setError('Enter a valid amount.'); return }
-    if (!category)         { setError('Select a category.'); return }
-    if (!date)             { setError('Select a date.'); return }
+    if (!amt || amt <= 0) { setError('Enter a valid amount.'); return }
+    if (!category)        { setError('Select a category.'); return }
+    if (!date)            { setError('Select a date.'); return }
     setLoading(true)
     try {
-      await addNew({ amount: amt, category, description: description.trim(), date })
-      navigate('/dashboard', { replace: true })
-    } catch (err) {
-      setError('Failed to save. Please try again.')
+      await edit(id, { amount: amt, category, description: description.trim(), date })
+      navigate('/expenses', { replace: true })
+    } catch {
+      setError('Failed to update. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -36,7 +76,7 @@ export default function AddExpensePage() {
 
   return (
     <div className="min-h-screen bg-karcha-bg pb-28">
-      <Header title="Spend" backTo="/dashboard" />
+      <Header title="Edit Expense" backTo="/expenses" />
 
       <div className="px-5 mt-4 space-y-5">
         {/* Amount */}
@@ -111,7 +151,7 @@ export default function AddExpensePage() {
           disabled={loading}
           className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 rounded-2xl text-base shadow-lg disabled:opacity-60 transition-colors"
         >
-          {loading ? 'Saving…' : 'Save Expense'}
+          {loading ? 'Saving…' : 'Update Expense'}
         </button>
       </div>
 

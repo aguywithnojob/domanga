@@ -3,8 +3,8 @@ import { NavLink, useLocation } from 'react-router-dom'
 const NAV = [
   { to: '/dashboard',  emoji: '🏠', label: 'Home'     },
   { to: '/expenses',   emoji: '📋', label: 'Expenses' },
-  { to: '/add',        emoji: '＋', label: 'Add',     fab: true },
-  { to: '/analytics',  emoji: '📊', label: 'Analysis' },
+  { to: '/add',        emoji: '＋', label: 'Spend',    fab: true },
+  { to: '/analytics',  emoji: '✨', label: 'Insights' },
   { to: '/settings',   emoji: '⚙️', label: 'Settings' },
 ]
 
@@ -19,7 +19,7 @@ export default function BottomNav() {
             className="flex flex-col items-center -mt-5"
           >
             {({ isActive }) => (
-              <span className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg transition-colors ${
+              <span className={`w-13 h-13 w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg transition-colors ${
                 isActive ? 'bg-accent-500 text-white' : 'bg-primary-600 text-white'
               }`}>
                 ＋

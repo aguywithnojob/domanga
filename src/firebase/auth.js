@@ -4,6 +4,7 @@ import {
   signOut,
 } from 'firebase/auth'
 import { auth } from './config'
+import { checkOtpRateLimit, recordOtpSend } from './db'
 
 /**
  * Set up invisible reCAPTCHA on the given container element id.
@@ -25,9 +26,11 @@ export function setupRecaptcha(containerId) {
  * Returns the confirmationResult object.
  */
 export async function sendOTP(phoneNumber, containerId) {
+  await checkOtpRateLimit(phoneNumber)
   const appVerifier = setupRecaptcha(containerId)
   const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier)
   window.confirmationResult = confirmationResult
+  await recordOtpSend(phoneNumber)
   return confirmationResult
 }
 

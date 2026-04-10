@@ -29,5 +29,13 @@ service cloud.firestore {
       allow update: if request.auth != null &&
         request.auth.uid == resource.data.paidBy;
     }
+
+    // OTP rate limiting — phone number stored as doc ID.
+    // Allow unauthenticated read (to check limit before sending) and
+    // unauthenticated write (to record a send). Firebase Auth itself
+    // gates actual OTP delivery, so spoofed writes only hurt the writer.
+    match /otpLimits/{phone} {
+      allow read, write: if true;
+    }
   }
 }

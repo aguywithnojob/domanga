@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
 import { CATEGORIES, getCategoryMeta } from '../utils/categories'
@@ -12,6 +13,7 @@ const FILTER_PERSON = ['all', 'me', 'partner']
 
 export default function ExpensesPage() {
   const { userProfile } = useAuth()
+  const navigate = useNavigate()
   const { expenses, loading, remove } = useExpenses()
 
   const { from: mFrom, to: mTo } = thisMonthRange()
@@ -132,8 +134,16 @@ export default function ExpensesPage() {
                     {formatDate(exp.date)} · {isMe ? '👤 You' : '👤 Partner'}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <p className="font-bold text-karcha-text text-sm">{formatINR(exp.amount)}</p>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <p className="font-bold text-karcha-text text-sm mr-1">{formatINR(exp.amount)}</p>
+                  {isMe && (
+                    <button
+                      onClick={() => navigate(`/edit/${exp.id}`)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-50 text-karcha-muted hover:text-primary-600 transition-colors"
+                    >
+                      ✏️
+                    </button>
+                  )}
                   {isMe && (
                     <button
                       onClick={() => handleDelete(exp.id)}

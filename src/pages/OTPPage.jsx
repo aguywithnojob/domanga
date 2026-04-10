@@ -76,10 +76,10 @@ export default function OTPPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-600 via-primary-700 to-accent-500 flex flex-col items-center justify-center px-6">
-      <div className="mb-8 text-center">
-        <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
-          <span className="text-3xl">📱</span>
+    <div className="min-h-screen bg-gradient-to-br from-primary-600 via-primary-700 to-accent-500 flex flex-col items-center justify-center px-4">
+      <div className="mb-6 text-center">
+        <div className="w-14 h-14 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+          <span className="text-2xl">📱</span>
         </div>
         <h1 className="text-2xl font-extrabold text-white">Verify OTP</h1>
         <p className="text-white/70 text-sm mt-1">
@@ -87,10 +87,10 @@ export default function OTPPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
-        <p className="text-karcha-muted text-sm mb-6 text-center">Enter the 6-digit code from SMS</p>
+      <div className="w-full max-w-xs bg-white rounded-3xl shadow-2xl px-5 py-6">
+        <p className="text-karcha-muted text-sm mb-5 text-center">Enter the 6-digit code from SMS</p>
 
-        <div className="flex gap-2 justify-center mb-6">
+        <div className="flex gap-1.5 justify-center mb-5">
           {otp.map((digit, i) => (
             <input
               key={i}
@@ -101,7 +101,7 @@ export default function OTPPage() {
               value={digit}
               onChange={e => handleChange(e.target.value, i)}
               onKeyDown={e => handleKeyDown(e, i)}
-              className="w-12 h-14 text-center text-2xl font-bold border-2 border-karcha-border rounded-2xl outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-karcha-text bg-gray-50"
+              className="w-10 h-12 text-center text-xl font-bold border-2 border-karcha-border rounded-xl outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all text-karcha-text bg-gray-50"
             />
           ))}
         </div>

@@ -87,7 +87,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-karcha-bg pb-28">
-      <Header title="Analytics" />
+      <Header title="Insights" />
 
       <div className="px-5 mt-4 space-y-5">
         {/* Preset tabs */}
@@ -159,32 +159,45 @@ export default function AnalyticsPage() {
               )}
             </div>
 
-            {/* Category Donut */}
-            <div className="bg-white rounded-3xl p-5 shadow-card">
-              <h3 className="font-bold text-karcha-text mb-4">Spending by Category</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry) => (
-                      <Cell key={entry.name} fill={CATEGORY_COLORS[CATEGORIES.find(c => c.label === entry.name)?.id] || '#6b7280'} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    formatter={(value) => <span className="text-xs text-karcha-text font-medium">{value}</span>}
-                    iconType="circle"
-                    iconSize={8}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            {/* Category Donut + You vs Partner — side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white rounded-3xl p-4 shadow-card">
+                <h3 className="font-bold text-karcha-text text-sm mb-2">By Category</h3>
+                <ResponsiveContainer width="100%" height={160}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={38}
+                      outerRadius={58}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry) => (
+                        <Cell key={entry.name} fill={CATEGORY_COLORS[CATEGORIES.find(c => c.label === entry.name)?.id] || '#6b7280'} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-white rounded-3xl p-4 shadow-card">
+                <h3 className="font-bold text-karcha-text text-sm mb-2">You vs Partner</h3>
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={personData} barSize={32}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 600, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                    <YAxis hide />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                      <Cell fill="#d97706" />
+                      <Cell fill="#ec4899" />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Category breakdown list */}
@@ -218,22 +231,6 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            {/* Per-person bar chart */}
-            <div className="bg-white rounded-3xl p-5 shadow-card">
-              <h3 className="font-bold text-karcha-text mb-4">You vs Partner</h3>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={personData} barSize={48}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                  <YAxis hide />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                    <Cell fill="#d97706" />
-                    <Cell fill="#ec4899" />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
           </>
         )}
       </div>

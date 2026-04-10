@@ -27,7 +27,9 @@ export default function LoginPage() {
       await sendOTP(e164, 'recaptcha-container')
       navigate('/verify', { state: { phone: e164 } })
     } catch (err) {
-      if (err.code === 'auth/network-request-failed') {
+      if (err.code === 'auth/rate-limited') {
+        setError(err.message)
+      } else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Check your internet connection and that your Firebase project is configured correctly.')
       } else if (err.code === 'auth/too-many-requests') {
         setError('Too many attempts. Please wait a few minutes and try again.')

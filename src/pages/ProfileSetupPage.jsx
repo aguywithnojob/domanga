@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { createUser, createCouple, joinCouple } from '../firebase/db'
+import { getUser, createUser, createCouple, joinCouple, getCouple } from '../firebase/db'
 
 export default function ProfileSetupPage() {
   const { firebaseUser, refreshProfile } = useAuth()
@@ -23,11 +23,21 @@ export default function ProfileSetupPage() {
     }
     setLoading(true)
     try {
-      await createUser(firebaseUser.uid, {
-        displayName: name.trim(),
-        phone: firebaseUser.phoneNumber,
-      })
+      const existing = await getUser(firebaseUser.uid)
+      if (!existing) {
+        await createUser(firebaseUser.uid, {
+          displayName: name.trim(),
+          phone: firebaseUser.phoneNumber,
+        })
+      }
       if (mode === 'create') {
+        const current = await getUser(firebaseUser.uid)
+        if (current?.coupleId) {
+          const couple = await getCouple(current.coupleId)
+          setInviteCode(couple.inviteCode)
+          await refreshProfile()
+          return
+        }
         const { inviteCode: ic } = await createCouple(firebaseUser.uid)
         setInviteCode(ic)
         await refreshProfile()

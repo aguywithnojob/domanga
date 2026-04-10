@@ -8,6 +8,11 @@ export const CATEGORIES = [
   { id: 'healthcare',    label: 'Healthcare',     emoji: '💊' },
   { id: 'shopping',      label: 'Shopping',       emoji: '🛍️' },
   { id: 'travel',        label: 'Travel',         emoji: '✈️' },
+  { id: 'credit_card',   label: 'Credit Card',    emoji: '💳' },
+  { id: 'laundry',       label: 'Laundry',        emoji: '👕' },
+  { id: 'car',           label: 'Car',            emoji: '🚘' },
+  { id: 'bike',          label: 'Bike',           emoji: '🏍️' },
+  { id: 'trip',          label: 'Trip',           emoji: '🗺️' },
   { id: 'others',        label: 'Others',         emoji: '📦' },
 ]
 
@@ -25,5 +30,10 @@ export const CATEGORY_COLORS = {
   healthcare:    '#ef4444',
   shopping:      '#8b5cf6',
   travel:        '#f97316',
+  credit_card:   '#64748b',
+  laundry:       '#0ea5e9',
+  car:           '#d97706',
+  bike:          '#16a34a',
+  trip:          '#a21caf',
   others:        '#6b7280',
 }

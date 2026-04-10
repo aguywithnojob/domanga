@@ -9,6 +9,7 @@ import OTPPage          from './pages/OTPPage'
 import ProfileSetupPage from './pages/ProfileSetupPage'
 import DashboardPage    from './pages/DashboardPage'
 import AddExpensePage   from './pages/AddExpensePage'
+import EditExpensePage  from './pages/EditExpensePage'
 import ExpensesPage     from './pages/ExpensesPage'
 import AnalyticsPage    from './pages/AnalyticsPage'
 import SettingsPage     from './pages/SettingsPage'
@@ -27,8 +28,9 @@ function AppRoutes() {
       {/* Protected */}
       <Route element={<RequireAuth />}>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/add"       element={<AddExpensePage />} />
-        <Route path="/expenses"  element={<ExpensesPage />} />
+        <Route path="/add"        element={<AddExpensePage />} />
+        <Route path="/edit/:id"   element={<EditExpensePage />} />
+        <Route path="/expenses"   element={<ExpensesPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/settings"  element={<SettingsPage />} />
       </Route>

@@ -1,25 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getCouple } from '../firebase/db'
+import { getCouple, setBudget } from '../firebase/db'
 import { logout } from '../firebase/auth'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
 import Spinner from '../components/common/Spinner'
-import { useEffect } from 'react'
 
 export default function SettingsPage() {
   const { userProfile, refreshProfile } = useAuth()
   const navigate = useNavigate()
-  const [couple, setCouple]     = useState(null)
-  const [loading, setLoading]   = useState(true)
-  const [copied, setCopied]     = useState(false)
+  const [couple, setCouple]           = useState(null)
+  const [loading, setLoading]         = useState(true)
+  const [copied, setCopied]           = useState(false)
+  const [budgetInput, setBudgetInput] = useState('')
+  const [budgetSaved, setBudgetSaved] = useState(false)
+  const [notifStatus, setNotifStatus] = useState(
+    'Notification' in window ? Notification.permission : 'unsupported'
+  )
 
   useEffect(() => {
     async function load() {
       if (userProfile?.coupleId) {
         const c = await getCouple(userProfile.coupleId)
         setCouple(c)
+        if (c?.monthlyBudget) setBudgetInput(String(c.monthlyBudget))
       }
       setLoading(false)
     }
@@ -38,21 +43,109 @@ export default function SettingsPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function saveBudget() {
+    const amt = parseFloat(budgetInput)
+    if (!amt || amt <= 0 || !userProfile?.coupleId) return
+    await setBudget(userProfile.coupleId, amt)
+    setCouple(prev => ({ ...prev, monthlyBudget: amt }))
+    setBudgetSaved(true)
+    setTimeout(() => setBudgetSaved(false), 2000)
+  }
+
+  async function requestNotifications() {
+    if (!('Notification' in window)) return
+    const result = await Notification.requestPermission()
+    setNotifStatus(result)
+    if (result === 'granted') scheduleNudge()
+  }
+
+  function scheduleNudge() {
+    // Register a daily 11 PM nudge via the service worker if supported
+    if (!('serviceWorker' in navigator)) return
+    navigator.serviceWorker.ready.then(reg => {
+      if ('periodicSync' in reg) {
+        reg.periodicSync.register('daily-nudge', { minInterval: 24 * 60 * 60 * 1000 }).catch(() => {})
+      }
+      // Fallback: schedule via setTimeout for current session (minutes until 23:00)
+      const now = new Date()
+      const nudge = new Date(now)
+      nudge.setHours(23, 0, 0, 0)
+      if (nudge <= now) nudge.setDate(nudge.getDate() + 1)
+      const ms = nudge.getTime() - now.getTime()
+      setTimeout(() => {
+        reg.showNotification('Karcha 💸', {
+          body: "Haven't logged any expense today — add one before you sleep!",
+          icon: '/domanga/icon-192.png',
+          badge: '/domanga/icon-192.png',
+        })
+      }, ms)
+    })
+  }
+
   return (
     <div className="min-h-screen bg-karcha-bg pb-28">
       <Header title="Settings" />
 
-      <div className="px-5 mt-6 space-y-4">
+      <div className="px-4 mt-5 space-y-3">
         {/* Profile card */}
-        <div className="bg-white rounded-3xl p-5 shadow-card">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-primary-400 to-accent-500 rounded-2xl flex items-center justify-center text-2xl font-bold text-white select-none">
+        <div className="bg-white rounded-xl p-4 shadow-card">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-accent-500 rounded-xl flex items-center justify-center text-xl font-bold text-white select-none">
               {userProfile?.displayName?.[0]?.toUpperCase() || '?'}
             </div>
             <div>
-              <p className="font-bold text-karcha-text text-lg">{userProfile?.displayName}</p>
+              <p className="font-bold text-karcha-text">{userProfile?.displayName}</p>
               <p className="text-karcha-muted text-sm">{userProfile?.phone}</p>
             </div>
+          </div>
+        </div>
+
+        {/* Monthly Budget */}
+        <div className="bg-white rounded-xl p-4 shadow-card">
+          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Monthly Budget</p>
+          <div className="flex gap-2">
+            <div className="flex-1 flex items-center gap-2 border border-karcha-border rounded-lg px-3 py-2 focus-within:border-primary-500">
+              <span className="text-primary-600 font-bold">₹</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="e.g. 50000"
+                value={budgetInput}
+                onChange={e => setBudgetInput(e.target.value)}
+                className="flex-1 outline-none text-karcha-text font-semibold text-sm bg-transparent"
+              />
+            </div>
+            <button
+              onClick={saveBudget}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform"
+            >
+              {budgetSaved ? '✓ Saved' : 'Save'}
+            </button>
+          </div>
+          <p className="text-karcha-muted text-xs mt-2">Shared budget for both of you. Shows a progress bar on the dashboard.</p>
+        </div>
+
+        {/* Notifications */}
+        <div className="bg-white rounded-xl p-4 shadow-card">
+          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Daily Nudge</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-karcha-text">Remind at 11 PM</p>
+              <p className="text-karcha-muted text-xs mt-0.5">
+                {notifStatus === 'granted' ? '✅ Notifications enabled' :
+                 notifStatus === 'denied'  ? '🚫 Blocked — enable in browser settings' :
+                 notifStatus === 'unsupported' ? 'Not supported on this device' :
+                 'Tap to allow notifications'}
+              </p>
+            </div>
+            {notifStatus === 'default' && (
+              <button
+                onClick={requestNotifications}
+                className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-semibold"
+              >
+                Enable
+              </button>
+            )}
           </div>
         </div>
 
@@ -60,10 +153,10 @@ export default function SettingsPage() {
         {loading ? (
           <div className="flex justify-center py-4"><Spinner /></div>
         ) : couple ? (
-          <div className="bg-white rounded-3xl p-5 shadow-card">
-            <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-4">Couple Info</p>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-accent-500/10 rounded-xl flex items-center justify-center text-xl">👫</div>
+          <div className="bg-white rounded-xl p-4 shadow-card">
+            <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Couple</p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 bg-accent-500/10 rounded-lg flex items-center justify-center text-lg">👫</div>
               <div>
                 <p className="font-semibold text-karcha-text text-sm">
                   {couple.members.length === 2 ? 'Linked with partner ✓' : 'Waiting for partner…'}
@@ -73,34 +166,28 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-
-            <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-primary-50 border border-primary-100 rounded-lg p-3 flex items-center justify-between">
               <div>
-                <p className="text-xs text-primary-500 font-semibold uppercase tracking-widest mb-0.5">Your Invite Code</p>
+                <p className="text-[10px] text-primary-500 font-semibold uppercase tracking-widest mb-0.5">Invite Code</p>
                 <p className="text-2xl font-extrabold text-primary-600 tracking-[0.2em]">{couple.inviteCode}</p>
               </div>
               <button
                 onClick={copyCode}
-                className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold active:scale-95 transition-transform"
+                className="px-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform"
               >
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? '✓' : 'Copy'}
               </button>
             </div>
           </div>
-        ) : (
-          <div className="bg-white rounded-3xl p-5 shadow-card">
-            <p className="text-karcha-muted text-sm text-center">No couple linked. Go back to setup to create or join one.</p>
-          </div>
-        )}
+        ) : null}
 
-        {/* App info */}
-        <div className="bg-white rounded-3xl p-5 shadow-card">
-          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">About</p>
+        {/* About */}
+        <div className="bg-white rounded-xl p-4 shadow-card">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">💸</span>
+            <span className="text-xl">💸</span>
             <div>
-              <p className="font-semibold text-karcha-text">Karcha</p>
-              <p className="text-karcha-muted text-xs">Expense analyzer for couples · v1.0</p>
+              <p className="font-semibold text-karcha-text text-sm">Karcha v1.0</p>
+              <p className="text-karcha-muted text-xs">Expense tracker for couples</p>
             </div>
           </div>
         </div>
@@ -108,7 +195,7 @@ export default function SettingsPage() {
         {/* Sign out */}
         <button
           onClick={handleLogout}
-          className="w-full bg-red-50 border border-red-100 text-red-500 font-semibold py-4 rounded-2xl text-sm active:scale-95 transition-transform"
+          className="w-full bg-red-50 border border-red-100 text-red-500 font-semibold py-3 rounded-xl text-sm active:scale-95 transition-transform"
         >
           Sign Out
         </button>
@@ -118,3 +205,4 @@ export default function SettingsPage() {
     </div>
   )
 }
+
