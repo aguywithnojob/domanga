@@ -37,5 +37,13 @@ service cloud.firestore {
     match /otpLimits/{phone} {
       allow read, write: if true;
     }
+
+    // App config — feature flags and category overrides.
+    // Any authenticated user can read. Only authenticated users can write
+    // (admin gate is enforced at the app level via the /admin route).
+    match /config/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
   }
 }

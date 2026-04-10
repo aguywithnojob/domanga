@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getCouple, setBudget } from '../firebase/db'
 import { logout } from '../firebase/auth'
@@ -191,6 +191,18 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Admin */}
+        <Link
+          to="/admin"
+          className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-card"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚙️</span>
+            <p className="text-sm font-semibold text-karcha-text">Admin Panel</p>
+          </div>
+          <span className="text-karcha-muted text-sm">›</span>
+        </Link>
 
         {/* Sign out */}
         <button

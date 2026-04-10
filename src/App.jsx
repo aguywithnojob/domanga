@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ExpenseProvider } from './contexts/ExpenseContext'
+import { FlagProvider } from './contexts/FeatureFlagContext'
 import RequireAuth from './components/common/RequireAuth'
 import PageLoader from './components/common/PageLoader'
 
@@ -13,6 +14,7 @@ import EditExpensePage  from './pages/EditExpensePage'
 import ExpensesPage     from './pages/ExpensesPage'
 import AnalyticsPage    from './pages/AnalyticsPage'
 import SettingsPage     from './pages/SettingsPage'
+import AdminPage        from './pages/AdminPage'
 
 function AppRoutes() {
   const { firebaseUser, loading } = useAuth()
@@ -33,6 +35,7 @@ function AppRoutes() {
         <Route path="/expenses"   element={<ExpensesPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/settings"  element={<SettingsPage />} />
+        <Route path="/admin"     element={<AdminPage />} />
       </Route>
 
       {/* Fallback */}
@@ -44,11 +47,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <HashRouter>
-      <AuthProvider>
-        <ExpenseProvider>
-          <AppRoutes />
-        </ExpenseProvider>
-      </AuthProvider>
+      <FlagProvider>
+        <AuthProvider>
+          <ExpenseProvider>
+            <AppRoutes />
+          </ExpenseProvider>
+        </AuthProvider>
+      </FlagProvider>
     </HashRouter>
   )
 }

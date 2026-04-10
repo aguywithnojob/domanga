@@ -1,16 +1,50 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
+import { useFlags } from '../contexts/FeatureFlagContext'
 import { CATEGORY_COLORS, getCategoryMeta, CATEGORIES } from '../utils/categories'
 import { formatINR, toInputDate, thisMonthRange, thisWeekRange, lastMonthRange } from '../utils/formatUtils'
-import { isWithinInterval, startOfDay, endOfDay } from 'date-fns'
+import { isWithinInterval, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns'
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell,
 } from 'recharts'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
 import Spinner from '../components/common/Spinner'
+
+function BudgetSparkline({ data, over }) {
+  const maxVal = Math.max(...data.map(d => Math.max(d.me, d.partner)), 1)
+  const W = 200, H = 44, pad = 4
+  function calcPts(key) {
+    return data.map((d, i) => {
+      const x = pad + (i / Math.max(data.length - 1, 1)) * (W - pad * 2)
+      const y = H - pad - (d[key] / maxVal) * (H - pad * 2)
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+  }
+  const mePts      = calcPts('me')
+  const partnerPts = calcPts('partner')
+  const meColor    = over ? '#ef4444' : '#16a34a'
+  return (
+    <div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ height: 44 }}>
+        <polyline points={mePts.join(' ')} fill="none" stroke={meColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+        <polyline points={partnerPts.join(' ')} fill="none" stroke="#ec4899" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+      </svg>
+      <div className="flex gap-3 mt-1">
+        <div className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: meColor }} />
+          <span className="text-[9px] text-karcha-muted">You</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full inline-block bg-pink-400" />
+          <span className="text-[9px] text-karcha-muted">Partner</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const PRESETS = [
   { id: 'month', label: 'This Month' },
@@ -41,7 +75,8 @@ const CustomTooltip = ({ active, payload }) => {
 
 export default function AnalyticsPage() {
   const { userProfile } = useAuth()
-  const { expenses, loading } = useExpenses()
+  const { expenses, budget, loading } = useExpenses()
+  const flags = useFlags()
 
   const [preset, setPreset]     = useState('month')
   const [fromDate, setFromDate] = useState(toInputDate(thisMonthRange().from))
@@ -83,7 +118,37 @@ export default function AnalyticsPage() {
 
   const total    = filtered.reduce((s, e) => s + e.amount, 0)
   const myTotal  = personData[0]?.value || 0
-  const topCat   = categoryData[0]
+
+  // Budget insight — always based on current month regardless of preset
+  const monthRange = thisMonthRange()
+  const monthExpenses = useMemo(() =>
+    expenses.filter(e =>
+      isWithinInterval(new Date(e.date), { start: startOfDay(monthRange.from), end: endOfDay(monthRange.to) })
+    ), [expenses])
+  const monthTotal   = monthExpenses.reduce((s, e) => s + e.amount, 0)
+  const budgetPct    = budget ? Math.min((monthTotal / budget) * 100, 100) : 0
+  const budgetOver   = budget && monthTotal > budget
+  const budgetLeft   = budget ? Math.max(budget - monthTotal, 0) : 0
+  const today        = new Date()
+  const daysInMonth  = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+  const daysPassed   = today.getDate()
+
+  // Daily spend sparkline — per-person split for each day of current month
+  const dailySparkData = useMemo(() => {
+    const days = eachDayOfInterval({ start: monthRange.from, end: today })
+    return days.map(d => {
+      const dayExp = monthExpenses.filter(e => {
+        const ed = new Date(e.date)
+        return ed.getFullYear() === d.getFullYear() &&
+               ed.getMonth()    === d.getMonth()    &&
+               ed.getDate()     === d.getDate()
+      })
+      return {
+        me:      dayExp.filter(e => e.paidBy === userProfile?.id).reduce((s, e) => s + e.amount, 0),
+        partner: dayExp.filter(e => e.paidBy !== userProfile?.id).reduce((s, e) => s + e.amount, 0),
+      }
+    })
+  }, [monthExpenses, userProfile])
 
   return (
     <div className="min-h-screen bg-karcha-bg pb-28">
@@ -104,6 +169,49 @@ export default function AnalyticsPage() {
             </button>
           ))}
         </div>
+
+        {/* Budget insight card — only shown on This Month preset */}
+        {flags.enableBudget !== false && preset === 'month' && budget ? (
+          <div className="bg-white rounded-2xl p-4 shadow-card">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] font-semibold text-karcha-muted uppercase tracking-widest">Monthly Budget</p>
+                <p className="text-xl font-extrabold text-karcha-text mt-0.5">{formatINR(budget)}</p>
+              </div>
+              <div className="text-right">
+                <p className={`text-xs font-bold ${budgetOver ? 'text-red-500' : 'text-primary-600'}`}>
+                  {budgetOver ? `Over by ${formatINR(monthTotal - budget)}` : `${formatINR(budgetLeft)} left`}
+                </p>
+                <p className="text-[10px] text-karcha-muted mt-0.5">{daysPassed}/{daysInMonth} days</p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden mt-3">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${budgetOver ? 'bg-red-500' : 'bg-primary-500'}`}
+                style={{ width: `${budgetPct}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1">
+              <p className="text-[10px] text-karcha-muted">{formatINR(monthTotal)} spent</p>
+              <p className="text-[10px] text-karcha-muted">{Math.round(budgetPct)}%</p>
+            </div>
+
+            {/* Daily sparkline */}
+            {dailySparkData.length > 1 && (
+              <div className="mt-3">
+                <p className="text-[10px] text-karcha-muted mb-1">Daily spend this month</p>
+                <BudgetSparkline data={dailySparkData} over={budgetOver} />
+              </div>
+            )}
+          </div>
+        ) : flags.enableBudget !== false && preset === 'month' && !budget ? (
+          <a href="#/settings" className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-card border border-dashed border-primary-200">
+            <p className="text-sm text-karcha-muted">Set a monthly budget to track progress</p>
+            <span className="text-primary-600 text-sm font-semibold">→</span>
+          </a>
+        ) : null}
 
         {/* Custom date range */}
         {preset === 'custom' && (
@@ -145,62 +253,9 @@ export default function AnalyticsPage() {
                   {total > 0 ? Math.round((myTotal / total) * 100) : 0}% of total
                 </p>
               </div>
-              {topCat && (
-                <div className="col-span-2 bg-white rounded-2xl p-4 shadow-card">
-                  <p className="text-xs text-karcha-muted font-semibold uppercase tracking-widest mb-1">Top Category</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{topCat.emoji}</span>
-                    <div>
-                      <p className="font-bold text-karcha-text">{topCat.name}</p>
-                      <p className="text-karcha-muted text-xs">{formatINR(topCat.value)}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Category Donut + You vs Partner — side by side */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-3xl p-4 shadow-card">
-                <h3 className="font-bold text-karcha-text text-sm mb-2">By Category</h3>
-                <ResponsiveContainer width="100%" height={160}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={38}
-                      outerRadius={58}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry) => (
-                        <Cell key={entry.name} fill={CATEGORY_COLORS[CATEGORIES.find(c => c.label === entry.name)?.id] || '#6b7280'} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-white rounded-3xl p-4 shadow-card">
-                <h3 className="font-bold text-karcha-text text-sm mb-2">You vs Partner</h3>
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={personData} barSize={32}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 600, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                    <YAxis hide />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                      <Cell fill="#d97706" />
-                      <Cell fill="#ec4899" />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Category breakdown list */}
+            {/* Category Breakdown */}
             <div className="bg-white rounded-3xl p-5 shadow-card">
               <h3 className="font-bold text-karcha-text mb-3">Category Breakdown</h3>
               <div className="space-y-3">
@@ -231,6 +286,22 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
+            {/* You vs Partner */}
+            <div className="bg-white rounded-3xl p-5 shadow-card">
+              <h3 className="font-bold text-karcha-text mb-4">You vs Partner</h3>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={personData} barSize={56}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                    <Cell fill="#d97706" />
+                    <Cell fill="#ec4899" />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </>
         )}
       </div>

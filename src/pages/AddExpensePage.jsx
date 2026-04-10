@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useExpenses } from '../contexts/ExpenseContext'
-import { CATEGORIES } from '../utils/categories'
+import { useCategories } from '../hooks/useCategories'
 import { toInputDate } from '../utils/formatUtils'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
@@ -9,6 +9,7 @@ import BottomNav from '../components/common/BottomNav'
 export default function AddExpensePage() {
   const navigate = useNavigate()
   const { addNew } = useExpenses()
+  const categories = useCategories()
 
   const [amount, setAmount]       = useState('')
   const [category, setCategory]   = useState('')
@@ -55,28 +56,28 @@ export default function AddExpensePage() {
           </div>
         </div>
 
-        {/* Category grid */}
+        {/* Category dropdown */}
         <div className="bg-white rounded-3xl shadow-card p-5">
           <label className="block text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Category</label>
-          <div className="grid grid-cols-4 gap-2">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                className={`flex flex-col items-center gap-1 py-3 px-1 rounded-2xl border-2 transition-all ${
-                  category === cat.id
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-karcha-border bg-gray-50 hover:border-primary-200'
-                }`}
-              >
-                <span className="text-2xl">{cat.emoji}</span>
-                <span className={`text-[10px] font-semibold text-center leading-tight ${
-                  category === cat.id ? 'text-primary-600' : 'text-karcha-muted'
-                }`}>
-                  {cat.label}
-                </span>
-              </button>
-            ))}
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
+              {categories.find(c => c.id === category)?.emoji || '📦'}
+            </span>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className={`w-full border rounded-2xl pl-12 pr-10 py-3.5 text-sm font-semibold outline-none appearance-none transition-colors ${
+                category
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-karcha-border bg-gray-50 text-karcha-muted'
+              }`}
+            >
+              <option value="" disabled>Select a category…</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.emoji} {cat.label}</option>
+              ))}
+            </select>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-karcha-muted pointer-events-none text-xs">▾</span>
           </div>
         </div>
 

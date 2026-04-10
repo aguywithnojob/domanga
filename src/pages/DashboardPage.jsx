@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
+import { useFlags } from '../contexts/FeatureFlagContext'
 import { formatINR, thisMonthRange, formatDate } from '../utils/formatUtils'
 import { getCategoryMeta } from '../utils/categories'
 import { isWithinInterval, startOfDay, endOfDay, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
@@ -32,6 +33,7 @@ function Sparkline({ weeks }) {
 export default function DashboardPage() {
   const { userProfile } = useAuth()
   const { expenses, budget, loading } = useExpenses()
+  const flags = useFlags()
   const [tab, setTab] = useState('all')
 
   const { from, to } = thisMonthRange()
@@ -49,14 +51,6 @@ export default function DashboardPage() {
   const budgetPct  = budget ? Math.min((totalMonth / budget) * 100, 100) : null
   const budgetOver = budget && totalMonth > budget
   const budgetLeft = budget ? Math.max(budget - totalMonth, 0) : null
-
-  const topCategory = useMemo(() => {
-    if (!monthExpenses.length) return null
-    const tally = {}
-    monthExpenses.forEach(e => { tally[e.category] = (tally[e.category] || 0) + e.amount })
-    const top = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]
-    return top ? getCategoryMeta(top[0]) : null
-  }, [monthExpenses])
 
   const daysPassed = today.getDate()
   const dailyAvg   = daysPassed > 0 ? Math.round(totalMonth / daysPassed) : 0
@@ -106,41 +100,34 @@ export default function DashboardPage() {
       </div>
 
       <div className="px-4 mt-4 space-y-3">
-        {/* Budget bar */}
-        {budget ? (
-          <div className="bg-white rounded-xl px-4 py-3 shadow-card">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-sm font-semibold text-karcha-text">Budget</p>
-              <p className={`text-xs font-semibold ${budgetOver ? 'text-red-500' : 'text-primary-600'}`}>
-                {budgetOver ? `Over by ${formatINR(totalMonth - budget)}` : `${formatINR(budgetLeft)} left`}
-              </p>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${budgetOver ? 'bg-red-500' : 'bg-primary-500'}`}
-                style={{ width: `${budgetPct}%` }}
-              />
-            </div>
-            <div className="flex justify-between mt-1">
-              <p className="text-[10px] text-karcha-muted">{formatINR(totalMonth)} spent</p>
-              <p className="text-[10px] text-karcha-muted">of {formatINR(budget)}</p>
-            </div>
-          </div>
-        ) : (
-          <Link to="/settings" className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-card border border-dashed border-primary-200">
-            <p className="text-sm text-karcha-muted">Set a monthly budget</p>
-            <span className="text-primary-600 text-sm font-semibold">→</span>
-          </Link>
-        )}
-
-        {/* Stats row */}
+        {/* Stats row — Budget · Avg/day · Week vs last */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-white rounded-xl p-3 shadow-card">
-            <p className="text-lg">{topCategory?.emoji ?? '🪙'}</p>
-            <p className="text-[10px] text-karcha-muted mt-0.5">Top spend</p>
-            <p className="text-xs font-bold text-karcha-text truncate mt-0.5">{topCategory?.label ?? '—'}</p>
-          </div>
-          <div className="bg-white rounded-xl p-3 shadow-card">
+          {/* Budget chip */}
+          {flags.enableBudget !== false ? (
+            budget ? (
+              <div className="bg-white rounded-xl p-3 shadow-card">
+                <p className="text-lg">{budgetOver ? '🔴' : '💰'}</p>
+                <p className="text-[10px] text-karcha-muted mt-0.5">Budget</p>
+                <p className={`text-xs font-bold mt-0.5 truncate ${budgetOver ? 'text-red-500' : 'text-primary-600'}`}>
+                  {budgetOver ? `−${formatINR(totalMonth - budget)}` : `${formatINR(budgetLeft)} left`}
+                </p>
+                <div className="h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${budgetOver ? 'bg-red-400' : 'bg-primary-500'}`}
+                    style={{ width: `${budgetPct}%` }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <Link to="/settings" className="bg-white rounded-xl p-3 shadow-card border border-dashed border-primary-200 flex flex-col justify-between">
+                <p className="text-lg">💰</p>
+                <p className="text-[10px] text-karcha-muted mt-0.5">Budget</p>
+                <p className="text-xs font-semibold text-primary-500 mt-0.5">Set →</p>
+              </Link>
+            )
+          ) : null}
+
+          <div className={`bg-white rounded-xl p-3 shadow-card ${flags.enableBudget === false ? 'col-span-1' : ''}`}>
             <p className="text-lg">📅</p>
             <p className="text-[10px] text-karcha-muted mt-0.5">Avg/day</p>
             <p className="text-xs font-bold text-karcha-text mt-0.5">{formatINR(dailyAvg)}</p>

@@ -33,13 +33,16 @@
 - OTP rate limiting — max 5 sends per phone per 24 hours (stored in Firestore)
 - Link two accounts with a 6-digit couple invite code
 - Add / edit / delete expenses by category, amount, date, and person
-- 15 expense categories including Food, Travel, Rent, Credit Card, Car, Bike, Trip, and more
+- Dynamic category list — enable/disable built-in categories, add custom ones via Admin panel
 - Monthly budget — set a budget, track a live progress bar on the dashboard
 - Dashboard with You / Partner / All tabs for recent expenses
-- Stat chips — top spending category, average spend per day, week-over-week sparkline
-- Monthly / weekly / custom date range analysis
-- Category donut chart and per-person bar chart on Insights screen
+- Stat chips — average spend per day, week-over-week sparkline
+- Budget sparkline on Insights — dual line showing your spend vs partner's spend per day
+- Monthly / weekly / custom date range analysis on Insights screen
+- Category breakdown bar list and You vs Partner chart on Insights
 - Filter and search expenses on the Expenses screen
+- **Admin panel** (`/admin`) — manage feature flags and categories from Firestore without redeploying
+- **Feature flags** — toggle app features on/off from Firestore DB in real time
 - Fully mobile-optimized UI with emerald green theme
 - PWA — installable on iPhone and Android, works offline (Workbox service worker)
 - Completely serverless — Firebase handles auth, database, and rules
@@ -55,7 +58,7 @@
 | Styling | Tailwind CSS v3 (custom emerald green palette) |
 | Auth | Firebase Phone OTP |
 | Database | Firebase Firestore |
-| Charts | Recharts |
+| Charts | Recharts (bar chart only — no pie) |
 | Routing | React Router v6 (HashRouter) |
 | PWA | vite-plugin-pwa + Workbox |
 | Date Utils | date-fns |
@@ -72,79 +75,75 @@ The diagram below shows how React components, contexts, and Firestore collection
 flowchart TD
     subgraph Entry["Entry & Routing (App.jsx)"]
         main["main.jsx\nRegisters PWA service worker"]
-        App["App.jsx\nHashRouter + AuthProvider + ExpenseProvider"]
+        App["App.jsx\nHashRouter + FlagProvider + AuthProvider + ExpenseProvider"]
         main --> App
     end
 
     subgraph Contexts["React Contexts"]
-        AuthCtx["AuthContext.jsx\n─────────────────\nfirebaseUser\nuserProfile (getUser)\nauthLoading\n─ waits for auth + profile ─"]
-        ExpCtx["ExpenseContext.jsx\n─────────────────\nexpenses[]\nbudget (monthlyBudget)\nloading\naddNew / edit / remove / refresh"]
+        FlagCtx["FeatureFlagContext.jsx\n─────────────────\nonSnapshot config/features\nProvides: { enableBudget, ... }"]
+        AuthCtx["AuthContext.jsx\n─────────────────\nfirebaseUser\nuserProfile (getUser)\nauthLoading"]
+        ExpCtx["ExpenseContext.jsx\n─────────────────\nexpenses[]\nbudget (monthlyBudget)\naddNew / edit / remove"]
     end
 
     subgraph PublicPages["Public Pages"]
         Login["LoginPage.jsx\n─────────────\nPhone input\ncheckOtpRateLimit\nsendOTP"]
         OTP["OTPPage.jsx\n─────────────\n6-digit input\nverifyOTP"]
-        Setup["ProfileSetupPage.jsx\n─────────────\nCreate or join couple\ngetUser guard\ncreateUser + createCouple / joinCouple"]
+        Setup["ProfileSetupPage.jsx\n─────────────\nCreate or join couple\ngetUser guard"]
     end
 
     subgraph ProtectedPages["Protected Pages (RequireAuth)"]
-        Dash["DashboardPage.jsx\n─────────────\nBudget progress bar\nStat chips (top cat, avg/day)\nSparkline SVG\nYou / Partner / All tabs"]
-        Add["AddExpensePage.jsx\n─────────────\nCategory picker\nAmount + date input\naddNew()"]
-        Edit["EditExpensePage.jsx\n─────────────\nPre-filled form\nedit()"]
-        Expenses["ExpensesPage.jsx\n─────────────\nFiltered list\nuseFilteredExpenses hook"]
-        Analytics["AnalyticsPage.jsx (Insights)\n─────────────\nDate range picker\nDonut chart + bar chart\nRecharts"]
-        Settings["SettingsPage.jsx\n─────────────\nMonthly budget input → setBudget()\nNotification nudge (11PM)\nCouple invite code\nSign out"]
+        Dash["DashboardPage.jsx\n─────────────\nBudget bar (flag: enableBudget)\n2 stat chips: avg/day + sparkline\nYou / Partner / All tabs"]
+        Add["AddExpensePage.jsx\n─────────────\nuseCategories() hook\naddNew()"]
+        Edit["EditExpensePage.jsx\n─────────────\nuseCategories() hook\nedit()"]
+        Expenses["ExpensesPage.jsx\n─────────────\nuseFilteredExpenses hook"]
+        Analytics["AnalyticsPage.jsx (Insights)\n─────────────\nBudget card + dual sparkline\nCategory breakdown list\nYou vs Partner bar chart"]
+        Settings["SettingsPage.jsx\n─────────────\nBudget, notifications\nInvite code, Admin link"]
+        Admin["AdminPage.jsx\n─────────────\nFeature flag toggles\nCategory enable/disable\nAdd custom categories"]
     end
 
-    subgraph Common["Common Components"]
-        BottomNav["BottomNav.jsx\nHome · Expenses · Spend · Insights · Settings"]
-        Header["Header.jsx"]
-        RequireAuth["RequireAuth.jsx\nRedirects unauthenticated users"]
-        PageLoader["PageLoader.jsx"]
+    subgraph Hooks["Custom Hooks"]
+        useCategories["useCategories.js\nFetches config/categories\nMerges static + custom\nFilters disabled"]
+        useFilteredExp["useFilteredExpenses.js\nFilters by person/category/date"]
     end
 
     subgraph FirebaseLayer["Firebase Layer (src/firebase/)"]
-        configJs["config.js\nFirebase app init\nExports: app, auth, db"]
-        authJs["auth.js\n─────────────────\nsendOTP(phone)\n  → checkOtpRateLimit\n  → signInWithPhoneNumber\n  → recordOtpSend\nverifyOTP(confirmationResult, code)"]
-        dbJs["db.js\n─────────────────\ngetUser / createUser / updateUser\ngetCouple / createCouple / joinCouple\ngetExpenses / addExpense\nupdateExpense / deleteExpense\nsetBudget\ncheckOtpRateLimit / recordOtpSend"]
+        configJs["config.js\nFirebase app init"]
+        authJs["auth.js\nsendOTP → rate limit\nverifyOTP"]
+        dbJs["db.js\nusers / couples\nexpenses / budget / OTP"]
+        adminJs["admin.js\ngetFeatureFlags / setFeatureFlag\ngetAdminCategories / saveAdminCategories"]
     end
 
     subgraph Firestore["Firestore Collections"]
-        UsersCol[("users/{uid}\n─────────────\nname\nphone\ncoupleId\npartnerId\ncreatedAt")]
-        CouplesCol[("couples/{coupleId}\n─────────────\nmembers[]\ninviteCode\nmonthlyBudget\ncreatedAt")]
-        ExpensesCol[("expenses/{id}\n─────────────\ncoupleId\naddedBy\namount\ncategory\nnote\ndate\ncreatedAt")]
-        OtpCol[("otpLimits/{phone}\n─────────────\nwindowStart\ncount")]
+        UsersCol[("users/{uid}")]
+        CouplesCol[("couples/{coupleId}\nmonthlyBudget")]
+        ExpensesCol[("expenses/{id}")]
+        OtpCol[("otpLimits/{phone}")]
+        ConfigCol[("config/features\n{ flagName: boolean }\n─────────────\nconfig/categories\n{ disabled[], custom[] }")]
     end
 
-    App --> AuthCtx
-    App --> ExpCtx
-    App --> PublicPages
-    App --> ProtectedPages
-    App --> Common
+    App --> FlagCtx & AuthCtx & ExpCtx
+    App --> PublicPages & ProtectedPages
 
-    Login  --> authJs
-    OTP    --> authJs
-    Setup  --> dbJs
-    Dash   --> ExpCtx
-    Add    --> ExpCtx
-    Edit   --> ExpCtx
-    Expenses --> ExpCtx
-    Analytics --> ExpCtx
+    Dash & Analytics --> FlagCtx
+    Add & Edit --> useCategories
+    Expenses --> useFilteredExp
+
+    Login --> authJs
+    OTP --> authJs
+    Setup --> dbJs
+    Dash & Add & Edit & Expenses & Analytics --> ExpCtx
     Settings --> dbJs
+    Admin --> adminJs
+    AuthCtx & ExpCtx --> dbJs
 
-    AuthCtx --> dbJs
-    ExpCtx  --> dbJs
+    authJs & dbJs & adminJs --> configJs
 
-    authJs --> configJs
-    dbJs   --> configJs
+    dbJs --> UsersCol & CouplesCol & ExpensesCol & OtpCol
+    adminJs --> ConfigCol
+    useCategories --> ConfigCol
+    FlagCtx --> ConfigCol
 
-    dbJs --> UsersCol
-    dbJs --> CouplesCol
-    dbJs --> ExpensesCol
-    authJs --> OtpCol
-    dbJs   --> OtpCol
-
-    ProtectedPages --> BottomNav
+    ProtectedPages --> BottomNav["BottomNav.jsx\nHome · Expenses · Spend · Insights · Settings"]
 ```
 
 ---
@@ -160,51 +159,47 @@ domanga/
 │
 ├── src/
 │   ├── main.jsx              # React entry point + PWA service worker registration
-│   ├── App.jsx               # Root router (HashRouter), AuthProvider, ExpenseProvider
+│   ├── App.jsx               # Root router, FlagProvider + AuthProvider + ExpenseProvider
 │   ├── index.css             # Global CSS, Tailwind base, karcha-bg colour
 │   │
 │   ├── components/
 │   │   └── common/
 │   │       ├── BottomNav.jsx     # 5-tab nav (Home, Expenses, Spend FAB, Insights, Settings)
-│   │       ├── Header.jsx        # Page header bar
+│   │       ├── Header.jsx        # Page header bar with optional back button
 │   │       ├── PageLoader.jsx    # Full-screen spinner while auth resolves
 │   │       ├── RequireAuth.jsx   # Route guard — redirects to / if not signed in
 │   │       └── Spinner.jsx       # Reusable inline spinner
 │   │
 │   ├── contexts/
 │   │   ├── AuthContext.jsx       # Provides firebaseUser, userProfile, authLoading
-│   │   │                         # Waits for both onAuthStateChanged + getUser() before
-│   │   │                         # setting loading=false (prevents reload flicker)
-│   │   └── ExpenseContext.jsx    # Provides expenses[], budget, CRUD helpers
-│   │                             # Fetches getExpenses + getCouple (for monthlyBudget)
+│   │   ├── ExpenseContext.jsx    # Provides expenses[], budget, CRUD helpers
+│   │   └── FeatureFlagContext.jsx # Realtime onSnapshot of config/features; useFlags() hook
 │   │
 │   ├── firebase/
 │   │   ├── config.js             # Firebase app init, exports app / auth / db
 │   │   ├── auth.js               # sendOTP (with rate-limit check), verifyOTP
-│   │   └── db.js                 # All Firestore helpers:
-│   │                             #   users: getUser, createUser, updateUser
-│   │                             #   couples: getCouple, createCouple, joinCouple
-│   │                             #   expenses: getExpenses, addExpense, updateExpense, deleteExpense
-│   │                             #   budget: setBudget (writes monthlyBudget to couple doc)
-│   │                             #   OTP limits: checkOtpRateLimit, recordOtpSend
+│   │   ├── db.js                 # Firestore helpers: users, couples, expenses, budget, OTP
+│   │   └── admin.js              # Admin helpers: feature flags + category config
 │   │
 │   ├── hooks/
+│   │   ├── useCategories.js        # Merges static + Firestore custom categories; respects disabled list
 │   │   └── useFilteredExpenses.js  # Filters expense list by person / category / date range
 │   │
 │   ├── pages/
 │   │   ├── LoginPage.jsx         # Phone number entry, triggers sendOTP
 │   │   ├── OTPPage.jsx           # 6-digit OTP inputs, calls verifyOTP
 │   │   ├── ProfileSetupPage.jsx  # Name entry + create or join a couple (idempotent)
-│   │   ├── DashboardPage.jsx     # Home: budget bar, stat chips, sparkline, tabbed expense list
-│   │   ├── AddExpensePage.jsx    # Form to log a new expense ("Spend")
-│   │   ├── EditExpensePage.jsx   # Pre-filled form to edit an existing expense
+│   │   ├── DashboardPage.jsx     # Home: budget bar (feature-flagged), 2 stat chips, tabbed list
+│   │   ├── AddExpensePage.jsx    # Form to log expense — uses useCategories() for dynamic list
+│   │   ├── EditExpensePage.jsx   # Pre-filled form to edit — uses useCategories()
 │   │   ├── ExpensesPage.jsx      # Scrollable filtered expense history
-│   │   ├── AnalyticsPage.jsx     # "Insights" — donut + bar charts via Recharts
-│   │   └── SettingsPage.jsx      # Budget setter, notification nudge, invite code, sign out
+│   │   ├── AnalyticsPage.jsx     # "Insights" — budget sparkline (You+Partner), category breakdown, bar chart
+│   │   ├── SettingsPage.jsx      # Budget setter, notification nudge, invite code, Admin link
+│   │   └── AdminPage.jsx         # Admin: feature flag toggles + category enable/disable/add
 │   │
 │   └── utils/
-│       ├── categories.js         # 15 expense categories with emoji + colour tokens
-│       └── formatUtils.js        # Currency formatter (₹ INR)
+│       ├── categories.js         # 15 built-in expense categories with emoji + colour tokens
+│       └── formatUtils.js        # Currency formatter (₹ INR), date helpers
 │
 ├── firestore.rules               # Firestore security rules (users, couples, expenses, otpLimits)
 ├── index.html                    # PWA meta tags, apple-touch-icon, theme-color #16a34a
@@ -252,6 +247,21 @@ domanga/
 |---|---|---|
 | `windowStart` | number | Unix ms timestamp of first OTP in current window |
 | `count` | number | Number of OTPs sent in current 24h window (max 5) |
+
+### `config/features`
+Flat map of feature flag name → boolean. Read in real time via `FeatureFlagContext`.
+
+| Example Field | Type | Effect |
+|---|---|---|
+| `enableBudget` | boolean | Show/hide budget bar on Dashboard + Insights |
+| `enableInsights` | boolean | Show/hide Insights (Analytics) tab |
+| any custom name | boolean | Toggle any feature without redeploying |
+
+### `config/categories`
+| Field | Type | Description |
+|---|---|---|
+| `disabled` | string[] | IDs of built-in categories hidden from the picker |
+| `custom` | `{id, label, emoji}[]` | Custom categories added via Admin panel |
 
 ---
 
