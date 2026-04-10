@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can read/write only their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Couples: any authenticated user may read (needed for invite code lookup)
+    // Only existing members can update
+    match /couples/{coupleId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+        request.auth.uid in resource.data.members;
+    }
+
+    // Expenses: only couple members can read/write/delete
+    match /expenses/{expenseId} {
+      // Allow create if user is authenticated (coupleId checked in app)
+      allow create: if request.auth != null;
+
+      // Read/delete only for couple members
+      allow read, delete: if request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/couples/$(resource.data.coupleId)).data.members;
+
+      // Only the person who created the expense can update it
+      allow update: if request.auth != null &&
+        request.auth.uid == resource.data.paidBy;
+    }
+  }
+}
