@@ -2,18 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users can read/write only their own profile
+    // Users can read/write only their own profile.
+    // Exception: any authenticated user may update another user's coupleId/partnerId
+    // fields only — needed when Person B joins Person A's couple.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coupleId', 'partnerId'])
+      );
     }
 
-    // Couples: any authenticated user may read (needed for invite code lookup)
-    // Only existing members can update
+    // Couples: any authenticated user may read (needed for invite code lookup).
+    // Create: any authenticated user (they become the first member).
+    // Update: existing members OR joining a couple that still only has 1 member.
     match /couples/{coupleId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if request.auth != null &&
-        request.auth.uid in resource.data.members;
+      allow update: if request.auth != null && (
+        request.auth.uid in resource.data.members ||
+        resource.data.members.size() < 2
+      );
     }
 
     // Expenses: only couple members can read/write/delete
