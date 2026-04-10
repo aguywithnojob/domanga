@@ -49,6 +49,8 @@ export default defineConfig({
             },
           },
         ],
+        skipWaiting: true,   // activate new SW immediately
+        clientsClaim: true,
       },
     }),
   ],
