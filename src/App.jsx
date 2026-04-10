@@ -1,7 +1,9 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ExpenseProvider } from './contexts/ExpenseContext'
 import { FlagProvider } from './contexts/FeatureFlagContext'
+import { onForegroundMessage } from './firebase/messaging'
 import RequireAuth from './components/common/RequireAuth'
 import PageLoader from './components/common/PageLoader'
 
@@ -18,29 +20,52 @@ import AdminPage        from './pages/AdminPage'
 
 function AppRoutes() {
   const { firebaseUser, loading } = useAuth()
+  const [toast, setToast] = useState(null)
+
+  useEffect(() => {
+    // Listen for FCM push messages when app is in the foreground
+    const unsub = onForegroundMessage(payload => {
+      const { title = 'Karcha 💸', body = '' } = payload.notification ?? {}
+      setToast({ title, body })
+      setTimeout(() => setToast(null), 4000)
+    })
+    return unsub
+  }, [])
+
   if (loading) return <PageLoader />
 
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/"       element={firebaseUser ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-      <Route path="/verify" element={<OTPPage />} />
-      <Route path="/setup"  element={<ProfileSetupPage />} />
+    <>
+      {toast && (
+        <div className="fixed top-4 left-4 right-4 z-50 bg-gray-900 text-white rounded-2xl px-4 py-3 shadow-xl flex items-start gap-3 animate-fade-in">
+          <span className="text-xl flex-shrink-0">💸</span>
+          <div className="min-w-0">
+            <p className="font-semibold text-sm">{toast.title}</p>
+            {toast.body && <p className="text-white/70 text-xs mt-0.5 truncate">{toast.body}</p>}
+          </div>
+        </div>
+      )}
+      <Routes>
+        {/* Public */}
+        <Route path="/"       element={firebaseUser ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+        <Route path="/verify" element={<OTPPage />} />
+        <Route path="/setup"  element={<ProfileSetupPage />} />
 
-      {/* Protected */}
-      <Route element={<RequireAuth />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/add"        element={<AddExpensePage />} />
-        <Route path="/edit/:id"   element={<EditExpensePage />} />
-        <Route path="/expenses"   element={<ExpensesPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/settings"  element={<SettingsPage />} />
-        <Route path="/admin"     element={<AdminPage />} />
-      </Route>
+        {/* Protected */}
+        <Route element={<RequireAuth />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/add"        element={<AddExpensePage />} />
+          <Route path="/edit/:id"   element={<EditExpensePage />} />
+          <Route path="/expenses"   element={<ExpensesPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/settings"  element={<SettingsPage />} />
+          <Route path="/admin"     element={<AdminPage />} />
+        </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getCouple, setBudget } from '../firebase/db'
 import { logout } from '../firebase/auth'
+import { subscribePush } from '../firebase/messaging'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
 import Spinner from '../components/common/Spinner'
@@ -56,30 +57,9 @@ export default function SettingsPage() {
     if (!('Notification' in window)) return
     const result = await Notification.requestPermission()
     setNotifStatus(result)
-    if (result === 'granted') scheduleNudge()
-  }
-
-  function scheduleNudge() {
-    // Register a daily 11 PM nudge via the service worker if supported
-    if (!('serviceWorker' in navigator)) return
-    navigator.serviceWorker.ready.then(reg => {
-      if ('periodicSync' in reg) {
-        reg.periodicSync.register('daily-nudge', { minInterval: 24 * 60 * 60 * 1000 }).catch(() => {})
-      }
-      // Fallback: schedule via setTimeout for current session (minutes until 23:00)
-      const now = new Date()
-      const nudge = new Date(now)
-      nudge.setHours(23, 0, 0, 0)
-      if (nudge <= now) nudge.setDate(nudge.getDate() + 1)
-      const ms = nudge.getTime() - now.getTime()
-      setTimeout(() => {
-        reg.showNotification('Karcha 💸', {
-          body: "Haven't logged any expense today — add one before you sleep!",
-          icon: '/domanga/icon-192.png',
-          badge: '/domanga/icon-192.png',
-        })
-      }, ms)
-    })
+    if (result === 'granted') {
+      await subscribePush(userProfile?.id)
+    }
   }
 
   return (

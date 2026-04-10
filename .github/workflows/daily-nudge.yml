@@ -1,0 +1,26 @@
+name: Daily Nudge
+
+on:
+  schedule:
+    # 23:00 IST = 17:30 UTC
+    - cron: '30 17 * * *'
+  workflow_dispatch: # allow manual trigger for testing
+
+jobs:
+  send-nudge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin --no-save
+
+      - name: Send daily nudge push notification
+        run: node scripts/send-nudge.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: karcha-efaa5
