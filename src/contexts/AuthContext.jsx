@@ -6,9 +6,10 @@ import { getUser, createUser } from '../firebase/db'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [firebaseUser, setFirebaseUser] = useState(undefined) // undefined = loading
-  const [userProfile, setUserProfile]   = useState(null)
-  const [authLoading, setAuthLoading]   = useState(true)
+  const [firebaseUser, setFirebaseUser]   = useState(undefined) // undefined = loading
+  const [userProfile, setUserProfile]     = useState(null)
+  const [partnerProfile, setPartnerProfile] = useState(null)
+  const [authLoading, setAuthLoading]     = useState(true)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
@@ -16,8 +17,15 @@ export function AuthProvider({ children }) {
       if (fbUser) {
         const profile = await getUser(fbUser.uid)
         setUserProfile(profile)
+        if (profile?.partnerId) {
+          const pp = await getUser(profile.partnerId)
+          setPartnerProfile(pp)
+        } else {
+          setPartnerProfile(null)
+        }
       } else {
         setUserProfile(null)
+        setPartnerProfile(null)
       }
       setAuthLoading(false)
     })
@@ -28,12 +36,18 @@ export function AuthProvider({ children }) {
     if (!firebaseUser) return
     const profile = await getUser(firebaseUser.uid)
     setUserProfile(profile)
+    if (profile?.partnerId) {
+      const pp = await getUser(profile.partnerId)
+      setPartnerProfile(pp)
+    } else {
+      setPartnerProfile(null)
+    }
   }
 
   const loading = authLoading
 
   return (
-    <AuthContext.Provider value={{ firebaseUser, userProfile, loading, refreshProfile }}>
+    <AuthContext.Provider value={{ firebaseUser, userProfile, partnerProfile, loading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )

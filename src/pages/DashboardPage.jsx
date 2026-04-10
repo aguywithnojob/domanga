@@ -31,8 +31,9 @@ function Sparkline({ weeks }) {
 }
 
 export default function DashboardPage() {
-  const { userProfile } = useAuth()
+  const { userProfile, partnerProfile } = useAuth()
   const { expenses, budget, loading } = useExpenses()
+  const partnerName = partnerProfile?.displayName || 'Partner'
   const flags = useFlags()
   const [tab, setTab] = useState('all')
 
@@ -87,7 +88,7 @@ export default function DashboardPage() {
             <p className="text-white text-4xl font-bold tracking-tight mt-0.5">{formatINR(totalMonth)}</p>
           </div>
           <div className="text-right">
-            <p className="text-white/60 text-[10px]">You · Partner</p>
+            <p className="text-white/60 text-[10px]">You · {partnerName}</p>
             <p className="text-white text-sm font-semibold">{formatINR(mySpend)} · {formatINR(partnerSpend)}</p>
           </div>
         </div>
@@ -148,7 +149,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex bg-gray-100 rounded-lg p-0.5">
-          {[['all','All'],['me','You'],['partner','Partner']].map(([val, label]) => (
+          {[['all','All'],['me','You'],['partner', partnerName]].map(([val, label]) => (
             <button
               key={val}
               onClick={() => setTab(val)}
@@ -184,7 +185,7 @@ export default function DashboardPage() {
                       {exp.description || meta.label}
                     </p>
                     <p className="text-karcha-muted text-xs mt-0.5">
-                      {formatDate(exp.date)} · {isMe ? 'You' : 'Partner'}
+                      {formatDate(exp.date)} · {isMe ? 'You' : partnerName}
                     </p>
                   </div>
                   <p className="font-bold text-karcha-text text-sm flex-shrink-0">{formatINR(exp.amount)}</p>

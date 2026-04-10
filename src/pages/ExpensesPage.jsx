@@ -12,9 +12,10 @@ import Spinner from '../components/common/Spinner'
 const FILTER_PERSON = ['all', 'me', 'partner']
 
 export default function ExpensesPage() {
-  const { userProfile } = useAuth()
+  const { userProfile, partnerProfile } = useAuth()
   const navigate = useNavigate()
   const { expenses, loading, remove } = useExpenses()
+  const partnerName = partnerProfile?.displayName || 'Partner'
 
   const { from: mFrom, to: mTo } = thisMonthRange()
 
@@ -95,7 +96,7 @@ export default function ExpensesPage() {
                   : 'bg-gray-50 text-karcha-muted border-karcha-border'
               }`}
             >
-              {p === 'me' ? '👤 You' : p === 'partner' ? '👤 Partner' : '👥 All'}
+              {p === 'me' ? '👤 You' : p === 'partner' ? `👤 ${partnerName}` : '👥 All'}
             </button>
           ))}
         </div>
@@ -131,7 +132,7 @@ export default function ExpensesPage() {
                     {exp.description || meta.label}
                   </p>
                   <p className="text-karcha-muted text-xs mt-0.5">
-                    {formatDate(exp.date)} · {isMe ? '👤 You' : '👤 Partner'}
+                    {formatDate(exp.date)} · {isMe ? '👤 You' : `👤 ${partnerName}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">

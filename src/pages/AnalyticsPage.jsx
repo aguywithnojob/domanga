@@ -13,7 +13,7 @@ import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
 import Spinner from '../components/common/Spinner'
 
-function BudgetSparkline({ data, over }) {
+function BudgetSparkline({ data, over, partnerName = 'Partner' }) {
   const maxVal = Math.max(...data.map(d => Math.max(d.me, d.partner)), 1)
   const W = 200, H = 44, pad = 4
   function calcPts(key) {
@@ -39,7 +39,7 @@ function BudgetSparkline({ data, over }) {
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full inline-block bg-pink-400" />
-          <span className="text-[9px] text-karcha-muted">Partner</span>
+          <span className="text-[9px] text-karcha-muted">{partnerName}</span>
         </div>
       </div>
     </div>
@@ -74,8 +74,9 @@ const CustomTooltip = ({ active, payload }) => {
 }
 
 export default function AnalyticsPage() {
-  const { userProfile } = useAuth()
+  const { userProfile, partnerProfile } = useAuth()
   const { expenses, budget, loading } = useExpenses()
+  const partnerName = partnerProfile?.displayName || 'Partner'
   const flags = useFlags()
 
   const [preset, setPreset]     = useState('month')
@@ -108,13 +109,13 @@ export default function AnalyticsPage() {
   // Per-person bar chart
   const personData = useMemo(() => {
     const you     = { name: userProfile?.displayName || 'You', value: 0 }
-    const partner = { name: 'Partner', value: 0 }
+    const partner = { name: partnerName, value: 0 }
     filtered.forEach(e => {
       if (e.paidBy === userProfile?.id) you.value += e.amount
       else partner.value += e.amount
     })
     return [you, partner]
-  }, [filtered, userProfile])
+  }, [filtered, userProfile, partnerName])
 
   const total    = filtered.reduce((s, e) => s + e.amount, 0)
   const myTotal  = personData[0]?.value || 0
@@ -202,7 +203,7 @@ export default function AnalyticsPage() {
             {dailySparkData.length > 1 && (
               <div className="mt-3">
                 <p className="text-[10px] text-karcha-muted mb-1">Daily spend this month</p>
-                <BudgetSparkline data={dailySparkData} over={budgetOver} />
+                <BudgetSparkline data={dailySparkData} over={budgetOver} partnerName={partnerName} />
               </div>
             )}
           </div>
@@ -288,7 +289,7 @@ export default function AnalyticsPage() {
 
             {/* You vs Partner */}
             <div className="bg-white rounded-3xl p-5 shadow-card">
-              <h3 className="font-bold text-karcha-text mb-4">You vs Partner</h3>
+              <h3 className="font-bold text-karcha-text mb-4">You vs {partnerName}</h3>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={personData} barSize={56}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
