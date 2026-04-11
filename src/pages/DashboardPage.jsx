@@ -56,6 +56,15 @@ export default function DashboardPage() {
   const daysPassed = today.getDate()
   const dailyAvg   = daysPassed > 0 ? Math.round(totalMonth / daysPassed) : 0
 
+  const todayTotal = useMemo(() =>
+    expenses.filter(e => {
+      const d = new Date(e.date)
+      return d.getFullYear() === today.getFullYear() &&
+             d.getMonth()    === today.getMonth()    &&
+             d.getDate()     === today.getDate()
+    }).reduce((s, e) => s + e.amount, 0)
+  , [expenses])
+
   const weekData = useMemo(() => {
     function sumWeek(s, e) {
       return expenses
@@ -92,11 +101,12 @@ export default function DashboardPage() {
             <p className="text-white text-sm font-semibold">{formatINR(mySpend)} · {formatINR(partnerSpend)}</p>
           </div>
         </div>
-        <div className="h-1 bg-white/20 rounded-full mt-3 overflow-hidden">
+        <div className="h-1.5 bg-white/20 rounded-full mt-3 overflow-hidden flex">
           <div
-            className="h-full bg-accent-400 rounded-full transition-all duration-700"
-            style={{ width: totalMonth > 0 ? `${Math.min((mySpend / totalMonth) * 100, 100)}%` : '0%' }}
+            className="h-full bg-orange-400 transition-all duration-700"
+            style={{ width: totalMonth > 0 ? `${(mySpend / totalMonth) * 100}%` : '0%' }}
           />
+          <div className="h-full bg-yellow-300 flex-1" />
         </div>
       </div>
 
@@ -129,9 +139,9 @@ export default function DashboardPage() {
           ) : null}
 
           <div className={`bg-white rounded-xl p-3 shadow-card ${flags.enableBudget === false ? 'col-span-1' : ''}`}>
-            <p className="text-lg">📅</p>
-            <p className="text-[10px] text-karcha-muted mt-0.5">Avg/day</p>
-            <p className="text-xs font-bold text-karcha-text mt-0.5">{formatINR(dailyAvg)}</p>
+            <p className="text-lg">🧾</p>
+            <p className="text-[10px] text-karcha-muted mt-0.5">Today</p>
+            <p className="text-xs font-bold text-karcha-text mt-0.5">{formatINR(todayTotal)}</p>
           </div>
           <div className="bg-white rounded-xl p-3 shadow-card">
             <Sparkline weeks={weekData} />

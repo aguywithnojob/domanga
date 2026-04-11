@@ -1,12 +1,15 @@
 // Daily nudge script — runs via GitHub Actions at 23:00 IST
 // Sends FCM push to all users who have granted notification permission
 // Required env vars:
-//   FIREBASE_SERVICE_ACCOUNT  — JSON string of the service account key
-//   FIREBASE_PROJECT_ID       — Firebase project ID
 
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 const admin = require('firebase-admin')
+
+if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+  console.error('Error: FIREBASE_SERVICE_ACCOUNT secret is not set. Add it in GitHub repo → Settings → Secrets and variables → Actions.')
+  process.exit(1)
+}
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
 
@@ -34,7 +37,7 @@ async function main() {
     tokens,
     notification: {
       title: 'Karcha 💸',
-      body:  "Don't forget to log today's expenses!",
+      body:  "Today’s expenses won’t log themselves (sadly)",
     },
     webpush: {
       notification: {

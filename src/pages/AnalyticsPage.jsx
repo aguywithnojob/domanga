@@ -25,12 +25,13 @@ function BudgetSparkline({ data, over, partnerName = 'Partner' }) {
   }
   const mePts      = calcPts('me')
   const partnerPts = calcPts('partner')
-  const meColor    = over ? '#ef4444' : '#16a34a'
+  const meColor      = '#3b82f6'  // blue — fixed for both users
+  const partnerColor = '#f97316'  // orange — fixed for both users
   return (
     <div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ height: 44 }}>
         <polyline points={mePts.join(' ')} fill="none" stroke={meColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
-        <polyline points={partnerPts.join(' ')} fill="none" stroke="#ec4899" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+        <polyline points={partnerPts.join(' ')} fill="none" stroke={partnerColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
       </svg>
       <div className="flex gap-3 mt-1">
         <div className="flex items-center gap-1">
@@ -38,7 +39,7 @@ function BudgetSparkline({ data, over, partnerName = 'Partner' }) {
           <span className="text-[9px] text-karcha-muted">You</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full inline-block bg-pink-400" />
+          <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: partnerColor }} />
           <span className="text-[9px] text-karcha-muted">{partnerName}</span>
         </div>
       </div>

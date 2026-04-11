@@ -132,7 +132,7 @@ export default function ExpensesPage() {
                     {exp.description || meta.label}
                   </p>
                   <p className="text-karcha-muted text-xs mt-0.5">
-                    {formatDate(exp.date)} · {isMe ? '👤 You' : `👤 ${partnerName}`}
+                    {formatDate(exp.date)} · <span className={isMe ? 'text-primary-600 font-semibold' : 'text-accent-500 font-semibold'}>{isMe ? 'You' : partnerName}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
