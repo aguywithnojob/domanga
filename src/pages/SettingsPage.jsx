@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useFlags } from '../contexts/FeatureFlagContext'
 import { getCouple, setBudget } from '../firebase/db'
+import { parseShorthand, filterAmountInput } from '../utils/formatUtils'
 import { logout } from '../firebase/auth'
 import { subscribePush } from '../firebase/messaging'
 import Header from '../components/common/Header'
@@ -119,11 +120,12 @@ export default function SettingsPage() {
             <div className="flex-1 min-w-0 flex items-center gap-2 border border-karcha-border rounded-lg px-3 py-2 focus-within:border-primary-500">
               <span className="text-primary-600 font-bold">₹</span>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
                 placeholder="e.g. 50000"
                 value={budgetInput}
-                onChange={e => setBudgetInput(e.target.value)}
+                onChange={e => setBudgetInput(filterAmountInput(e.target.value))}
+                onBlur={e => setBudgetInput(parseShorthand(e.target.value))}
                 className="flex-1 outline-none text-karcha-text font-semibold text-sm bg-transparent"
               />
             </div>

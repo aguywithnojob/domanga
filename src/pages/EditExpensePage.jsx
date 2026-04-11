@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useExpenses } from '../contexts/ExpenseContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useCategories } from '../hooks/useCategories'
-import { toInputDate, formatINR } from '../utils/formatUtils'
+import { toInputDate, formatINR, parseShorthand, filterAmountInput } from '../utils/formatUtils'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
 import Spinner from '../components/common/Spinner'
@@ -86,11 +86,12 @@ export default function EditExpensePage() {
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-primary-600">₹</span>
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
               placeholder="0"
               value={amount}
-              onChange={e => setAmount(e.target.value)}
+              onChange={e => setAmount(filterAmountInput(e.target.value))}
+              onBlur={e => setAmount(parseShorthand(e.target.value))}
               className="flex-1 text-4xl font-extrabold text-karcha-text outline-none bg-transparent placeholder-gray-200"
             />
           </div>
