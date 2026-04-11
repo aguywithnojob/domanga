@@ -2,7 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ExpenseProvider } from './contexts/ExpenseContext'
-import { FlagProvider } from './contexts/FeatureFlagContext'
+import { FlagProvider, useFlags } from './contexts/FeatureFlagContext'
 import { onForegroundMessage } from './firebase/messaging'
 import RequireAuth from './components/common/RequireAuth'
 import PageLoader from './components/common/PageLoader'
@@ -18,6 +18,18 @@ import AnalyticsPage    from './pages/AnalyticsPage'
 import SettingsPage     from './pages/SettingsPage'
 import AdminPage        from './pages/AdminPage'
 import CategoryBudgetPage from './pages/CategoryBudgetPage'
+
+function ThemeApplier() {
+  const { enabletheme } = useFlags()
+  useEffect(() => {
+    if (enabletheme) {
+      document.documentElement.setAttribute('data-theme', 'blue')
+    } else {
+      document.documentElement.removeAttribute('data-theme')
+    }
+  }, [enabletheme])
+  return null
+}
 
 function AppRoutes() {
   const { firebaseUser, loading } = useAuth()
@@ -81,6 +93,7 @@ export default function App() {
   return (
     <HashRouter>
       <FlagProvider>
+        <ThemeApplier />
         <AuthProvider>
           <ExpenseProvider>
             <AppRoutes />

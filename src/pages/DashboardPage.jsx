@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
+import { useThemeColors } from '../contexts/FeatureFlagContext'
 import { formatINR, thisMonthRange, formatDate } from '../utils/formatUtils'
 import { getCategoryMeta } from '../utils/categories'
 import { isWithinInterval, startOfDay, endOfDay, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
@@ -32,6 +33,7 @@ function Sparkline({ weeks }) {
 export default function DashboardPage() {
   const { userProfile, partnerProfile } = useAuth()
   const { expenses, budget, loading } = useExpenses()
+  const { primary: primaryColor } = useThemeColors()
   const partnerName = partnerProfile?.displayName || 'Partner'
   const [tab, setTab] = useState('all')
   const [isOnline, setIsOnline] = useState(navigator.onLine)
@@ -70,8 +72,8 @@ export default function DashboardPage() {
   // Sync OS/browser status bar colour with online state
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]')
-    if (meta) meta.setAttribute('content', isOnline ? '#16a34a' : '#6b7280')
-  }, [isOnline])
+    if (meta) meta.setAttribute('content', isOnline ? primaryColor : '#6b7280')
+  }, [isOnline, primaryColor])
 
   const { from, to } = thisMonthRange()
   const today = new Date()
@@ -159,7 +161,7 @@ export default function DashboardPage() {
               <div className="bg-white rounded-xl p-3 shadow-card">
                 <p className="text-lg">{budgetOver ? '🔴' : '💰'}</p>
                 <p className="text-[10px] text-karcha-muted mt-0.5">Budget</p>
-                <p className={`text-xs font-bold mt-0.5 truncate ${budgetOver ? 'text-red-500' : 'text-primary-600'}`}>
+                <p className="text-xs font-bold mt-0.5 truncate text-orange-500">
                   {budgetOver ? `−${formatINR(totalMonth - budget)}` : `${formatINR(budgetLeft)} left`}
                 </p>
                 <div className="h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
@@ -181,12 +183,12 @@ export default function DashboardPage() {
           <div className="bg-white rounded-xl p-3 shadow-card">
             <p className="text-lg">🧾</p>
             <p className="text-[10px] text-karcha-muted mt-0.5">Today</p>
-            <p className="text-xs font-bold text-karcha-text mt-0.5">{formatINR(todayTotal)}</p>
+            <p className="text-xs font-bold text-blue-500 mt-0.5">{formatINR(todayTotal)}</p>
           </div>
           <div className="bg-white rounded-xl p-3 shadow-card">
             <Sparkline weeks={weekData} />
             <p className="text-[10px] text-karcha-muted mt-0.5">Week vs last</p>
-            <p className={`text-xs font-bold mt-0.5 ${weekData[1].total >= weekData[0].total ? 'text-red-500' : 'text-primary-600'}`}>
+            <p className="text-xs font-bold mt-0.5 text-orange-500">
               {weekData[1].total >= weekData[0].total ? '↑' : '↓'} {formatINR(weekData[1].total)}
             </p>
           </div>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
-import { useFlags } from '../contexts/FeatureFlagContext'
+import { useFlags, useThemeColors } from '../contexts/FeatureFlagContext'
 import { CATEGORY_COLORS, getCategoryMeta, CATEGORIES } from '../utils/categories'
 import { formatINR, toInputDate, thisMonthRange, thisWeekRange, lastMonthRange } from '../utils/formatUtils'
 import { isWithinInterval, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns'
@@ -78,6 +78,7 @@ export default function AnalyticsPage() {
   const { userProfile, partnerProfile } = useAuth()
   const { expenses, budget, categoryBudgets, loading } = useExpenses()
   const flags = useFlags()
+  const { primary: primaryColor, accent: accentColor } = useThemeColors()
   const partnerName = partnerProfile?.displayName || 'Partner'
 
   const [preset, setPreset]     = useState('month')
@@ -289,7 +290,7 @@ export default function AnalyticsPage() {
                         {catBudget ? (
                           <div
                             className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${budgetPct}%`, backgroundColor: isOver ? '#ef4444' : '#16a34a' }}
+                            style={{ width: `${budgetPct}%`, backgroundColor: isOver ? '#ef4444' : primaryColor }}
                           />
                         ) : (
                           <div
@@ -314,8 +315,8 @@ export default function AnalyticsPage() {
                   <YAxis hide />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                    <Cell fill="#d97706" />
-                    <Cell fill="#ec4899" />
+                    <Cell fill={primaryColor} />
+                    <Cell fill={accentColor} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
