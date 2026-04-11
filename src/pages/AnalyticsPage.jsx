@@ -272,13 +272,13 @@ export default function AnalyticsPage() {
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">{cat.emoji}</span>
-                          <span className="text-sm font-semibold text-karcha-text">{cat.name}</span>
+                          <span className={`text-sm font-semibold ${catBudget ? (isOver ? 'text-red-500' : 'text-primary-600') : 'text-karcha-text'}`}>{cat.name}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-sm font-bold text-karcha-text">{formatINR(cat.value)}</span>
+                          <span className={`text-sm font-bold ${catBudget ? (isOver ? 'text-red-500' : 'text-primary-600') : 'text-karcha-text'}`}>{formatINR(cat.value)}</span>
                           {catBudget ? (
-                            <span className={`text-xs ml-2 font-semibold ${isOver ? 'text-red-500' : 'text-karcha-muted'}`}>
-                              {isOver ? `↑ over` : `/ ${formatINR(catBudget)}`}
+                            <span className={`text-xs ml-2 font-semibold ${isOver ? 'text-red-400' : 'text-primary-400'}`}>
+                              {isOver ? `↑ ${formatINR(cat.value - catBudget)} over` : `/ ${formatINR(catBudget)}`}
                             </span>
                           ) : (
                             <span className="text-xs text-karcha-muted ml-2">{Math.round(pct)}%</span>
@@ -289,7 +289,7 @@ export default function AnalyticsPage() {
                         {catBudget ? (
                           <div
                             className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${budgetPct}%`, backgroundColor: isOver ? '#ef4444' : (CATEGORY_COLORS[catId] || '#6b7280') }}
+                            style={{ width: `${budgetPct}%`, backgroundColor: isOver ? '#ef4444' : '#16a34a' }}
                           />
                         ) : (
                           <div
