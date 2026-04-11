@@ -100,13 +100,15 @@ export default function EditExpensePage() {
         <div className="bg-white rounded-3xl shadow-card p-5">
           <label className="block text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Category</label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
-              {categories.find(c => c.id === category)?.emoji || '📦'}
-            </span>
+            {!category && (
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
+                📦
+              </span>
+            )}
             <select
               value={category}
               onChange={e => setCategory(e.target.value)}
-              className={`w-full border rounded-2xl pl-12 pr-10 py-3.5 text-sm font-semibold outline-none appearance-none transition-colors ${
+              className={`w-full border rounded-2xl ${category ? 'pl-4' : 'pl-12'} pr-10 py-3.5 text-sm font-semibold outline-none appearance-none transition-colors ${
                 category
                   ? 'border-primary-500 bg-primary-50 text-primary-700'
                   : 'border-karcha-border bg-gray-50 text-karcha-muted'
