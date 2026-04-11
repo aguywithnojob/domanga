@@ -113,7 +113,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Monthly Budget */}
+        {/* Monthly Budget — hidden when enableBudget flag is on (category budgets take over) */}
+        {!flags.enableBudget && (
         <div className="bg-white rounded-xl p-4 shadow-card">
           <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Monthly Budget</p>
           <div className="flex gap-2">
@@ -138,6 +139,7 @@ export default function SettingsPage() {
           </div>
           <p className="text-karcha-muted text-xs mt-2">Shared budget for both of you.</p>
         </div>
+        )}
 
         {/* Notifications */}
         <div className="bg-white rounded-xl p-4 shadow-card">
@@ -252,10 +254,7 @@ export default function SettingsPage() {
 
         {/* App version */}
         <p className="text-center text-[10px] text-karcha-muted pt-1">
-          Karcha v{__APP_VERSION__.split('.').slice(0, 2).join('.')} &nbsp;&middot;&nbsp; {new Date(__BUILD_TIME__).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-        </p>
-        <p className="text-center text-[10px] text-karcha-muted pt-1">
-          @aguywithnojob
+          Karcha v{__APP_VERSION__.split('.').slice(0, 2).join('.')} &nbsp;&middot;&nbsp; {new Date(__BUILD_TIME__).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} &nbsp;&middot;&nbsp; @aguywithnojob
         </p>
       </div>
 
