@@ -6,9 +6,10 @@ const ExpenseContext = createContext(null)
 
 export function ExpenseProvider({ children }) {
   const { userProfile } = useAuth()
-  const [expenses, setExpenses] = useState([])
-  const [budget, setBudget]     = useState(null)
-  const [loading, setLoading]   = useState(true)
+  const [expenses, setExpenses]           = useState([])
+  const [budget, setBudget]               = useState(null)
+  const [categoryBudgets, setCatBudgets]  = useState({})
+  const [loading, setLoading]             = useState(true)
 
   useEffect(() => {
     if (!userProfile?.coupleId) {
@@ -18,7 +19,10 @@ export function ExpenseProvider({ children }) {
     }
     setLoading(true)
     // Fetch budget once (budget changes are infrequent)
-    getCouple(userProfile.coupleId).then(c => setBudget(c?.monthlyBudget ?? null))
+    getCouple(userProfile.coupleId).then(c => {
+      setBudget(c?.monthlyBudget ?? null)
+      setCatBudgets(c?.categoryBudgets ?? {})
+    })
     // Real-time listener — auto-updates for both users instantly
     const unsub = subscribeExpenses(userProfile.coupleId, data => {
       setExpenses(data)
@@ -42,7 +46,7 @@ export function ExpenseProvider({ children }) {
   }
 
   return (
-    <ExpenseContext.Provider value={{ expenses, budget, loading, addNew, edit, remove }}>
+    <ExpenseContext.Provider value={{ expenses, budget, categoryBudgets, loading, addNew, edit, remove }}>
       {children}
     </ExpenseContext.Provider>
   )

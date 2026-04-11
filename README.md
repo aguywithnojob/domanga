@@ -28,6 +28,7 @@
 - Add / edit / delete expenses by category, amount, date, and person
 - Dynamic category list — enable/disable built-in categories, add custom ones via Admin panel
 - Monthly budget — set a budget, track a live progress bar on the dashboard
+- **Category budgets** (feature-flagged via `enableBudget`) — set per-category monthly limits; Insights shows budget vs spent bars per category, red when over
 - Dashboard with You / [Partner name] / All tabs — shows partner's real name everywhere
 - Stat chips — Today's total and week-over-week sparkline
 - Budget sparkline on Insights — dual line showing your spend vs partner's spend per day

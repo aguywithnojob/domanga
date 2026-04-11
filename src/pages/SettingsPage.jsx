@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useFlags } from '../contexts/FeatureFlagContext'
 import { getCouple, setBudget } from '../firebase/db'
 import { logout } from '../firebase/auth'
 import { subscribePush } from '../firebase/messaging'
@@ -10,6 +11,7 @@ import Spinner from '../components/common/Spinner'
 
 export default function SettingsPage() {
   const { userProfile, refreshProfile } = useAuth()
+  const flags = useFlags()
   const navigate = useNavigate()
   const [couple, setCouple]           = useState(null)
   const [loading, setLoading]         = useState(true)
@@ -220,6 +222,20 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Category Budgets — only when enableBudget flag is on */}
+        {flags.enableBudget && (
+          <Link
+            to="/category-budgets"
+            className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-card"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">📊</span>
+              <p className="text-sm font-semibold text-karcha-text">Category Budgets</p>
+            </div>
+            <span className="text-karcha-muted text-sm">›</span>
+          </Link>
+        )}
+
         {/* Admin */}
         <Link
           to="/admin"
@@ -235,6 +251,9 @@ export default function SettingsPage() {
         {/* App version */}
         <p className="text-center text-[10px] text-karcha-muted pt-1">
           Karcha v{__APP_VERSION__.split('.').slice(0, 2).join('.')} &nbsp;&middot;&nbsp; {new Date(__BUILD_TIME__).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+        </p>
+        <p className="text-center text-[10px] text-karcha-muted pt-1">
+          @aguywithnojob
         </p>
       </div>
 

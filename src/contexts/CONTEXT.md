@@ -47,6 +47,7 @@ FlagProvider        ← outermost (flags needed by AuthProvider children)
 |---|---|---|
 | `expenses` | array | All expenses for the couple, sorted by `createdAt` desc (most recently added first) |
 | `budget` | number \| null | `couples.monthlyBudget` |
+| `categoryBudgets` | object | `couples.categoryBudgets` — map of `{ [categoryId]: amount }`, empty `{}` if not set |
 | `loading` | boolean | True while fetching |
 | `addNew(data)` | fn | Fire-and-forget (no await) — resolves instantly online or offline; onSnapshot auto-updates list |
 | `edit(id, data)` | async fn | Update expense — onSnapshot auto-updates list |
@@ -78,9 +79,9 @@ FlagProvider        ← outermost (flags needed by AuthProvider children)
 **Current flags used in code:**
 | Flag | Default | Effect |
 |---|---|---|
-| `enableBudget` | true (if not set) | Hides budget chip on Dashboard + budget card on Insights if `false` |
+| `enableBudget` | unset | When `true`: shows Category Budgets link in Settings, shows per-category budget bars in Insights |
 
-**Used by:** DashboardPage, AnalyticsPage
+**Used by:** DashboardPage, SettingsPage, AnalyticsPage, CategoryBudgetPage
 
 ---
 

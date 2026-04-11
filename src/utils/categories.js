@@ -12,7 +12,13 @@ export const CATEGORIES = [
   { id: 'laundry',       label: 'Laundry',        emoji: '👕' },
   { id: 'car',           label: 'Car',            emoji: '🚘' },
   { id: 'bike',          label: 'Bike',           emoji: '🏍️' },
+  { id: 'petrol',        label: 'Petrol',         emoji: '⛽' },
+  { id: 'ola_uber',      label: 'Ola/Uber',       emoji: '🚖' },
   { id: 'trip',          label: 'Trip',           emoji: '🗺️' },
+  { id: 'maid',          label: 'Maid',           emoji: '🧹' },
+  { id: 'household',     label: 'Household',      emoji: '🏡' },
+  { id: 'fitness',       label: 'Fitness',        emoji: '🏋️' },
+  { id: 'education',     label: 'Education',      emoji: '📚' },
   { id: 'others',        label: 'Others',         emoji: '📦' },
 ]
 
@@ -34,6 +40,12 @@ export const CATEGORY_COLORS = {
   laundry:       '#0ea5e9',
   car:           '#d97706',
   bike:          '#16a34a',
+  petrol:        '#ca8a04',
+  ola_uber:      '#7c3aed',
   trip:          '#a21caf',
+  maid:          '#0d9488',
+  household:     '#65a30d',
+  fitness:       '#dc2626',
+  education:     '#2563eb',
   others:        '#6b7280',
 }

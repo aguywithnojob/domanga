@@ -17,6 +17,7 @@ import ExpensesPage     from './pages/ExpensesPage'
 import AnalyticsPage    from './pages/AnalyticsPage'
 import SettingsPage     from './pages/SettingsPage'
 import AdminPage        from './pages/AdminPage'
+import CategoryBudgetPage from './pages/CategoryBudgetPage'
 
 function AppRoutes() {
   const { firebaseUser, loading } = useAuth()
@@ -66,6 +67,7 @@ function AppRoutes() {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/settings"  element={<SettingsPage />} />
           <Route path="/admin"     element={<AdminPage />} />
+          <Route path="/category-budgets" element={<CategoryBudgetPage />} />
         </Route>
 
         {/* Fallback */}

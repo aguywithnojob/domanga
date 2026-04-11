@@ -43,6 +43,10 @@ export async function setBudget(coupleId, amount) {
   await updateDoc(doc(db, 'couples', coupleId), { monthlyBudget: amount })
 }
 
+export async function setCategoryBudgets(coupleId, budgets) {
+  await updateDoc(doc(db, 'couples', coupleId), { categoryBudgets: budgets })
+}
+
 // ─── OTP Rate Limiting ───────────────────────────────────────────────────────
 // Stores send attempts per phone. Max 5 sends per 24 hours.
 const OTP_MAX_PER_DAY = 5

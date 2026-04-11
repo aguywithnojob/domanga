@@ -80,9 +80,9 @@
 - **Consumes:** `useAuth()`, `useExpenses()`, `useFlags()`
 - **Charts:**
   - Dual-line budget sparkline: **blue** (`#3b82f6`) = You, **orange** (`#f97316`) = Partner — fixed for both devices
-  - Category breakdown (horizontal list, sorted desc)
+  - Category breakdown (horizontal list, sorted desc) — when `enableBudget` flag is on and a category budget is set, shows `₹spent / ₹budget` with budget-relative progress bar (red if over)
   - You vs [PartnerName] bar chart (Recharts)
-- **Feature flags:** `enableBudget` hides budget card
+- **Feature flags:** `enableBudget` — when `true`, category breakdown shows per-category budget bars
 - **Notes:** Budget insight always uses current calendar month, regardless of preset.
 
 ### `SettingsPage.jsx`
@@ -92,9 +92,20 @@
 - **Consumes:** `useAuth()`
 - **Firestore read:** `couples/{coupleId}`
 - **Firestore write:** `couples` (setBudget), `users` (fcmToken via subscribePush)
-- **Features:** Profile card + inline Sign out, budget input, notification enable, invite code copy, PWA install button, Admin link, app version footer.
+- **Feature flags:** `enableBudget` — when `true`, shows Category Budgets link
+- **Notes:** Profile card + inline Sign out, monthly budget input, notification enable, invite code copy, PWA install button, Category Budgets link (flag-gated), Admin link, app version footer.
 - **Offline fix:** `subscribePush` called on mount if `Notification.permission === 'granted'` — ensures FCM token saved even if user previously accepted without button tap.
 - **Install prompt:** Captured in `main.jsx` via `window.__installPrompt` before React mounts to avoid missing early `beforeinstallprompt` event.
+
+### `CategoryBudgetPage.jsx`
+- **Route:** `/category-budgets`
+- **Purpose:** Set per-category monthly spend limits
+- **Key state:** `inputs` (map of categoryId → string), `loading`, `saving`, `saved`
+- **Consumes:** `useAuth()`, `useFlags()`
+- **Firestore read:** `couples/{coupleId}` via `getCouple` (pre-fills existing values)
+- **Firestore write:** `couples/{coupleId}.categoryBudgets` via `setCategoryBudgets`
+- **Feature flag:** Redirects to `/settings` if `enableBudget` is `false`
+- **Access:** Linked from SettingsPage only when `enableBudget` flag is `true`
 
 ### `AdminPage.jsx`
 - **Route:** `/admin`

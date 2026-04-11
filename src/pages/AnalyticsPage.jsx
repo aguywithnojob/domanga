@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
+import { useFlags } from '../contexts/FeatureFlagContext'
 import { CATEGORY_COLORS, getCategoryMeta, CATEGORIES } from '../utils/categories'
 import { formatINR, toInputDate, thisMonthRange, thisWeekRange, lastMonthRange } from '../utils/formatUtils'
 import { isWithinInterval, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns'
@@ -75,7 +76,8 @@ const CustomTooltip = ({ active, payload }) => {
 
 export default function AnalyticsPage() {
   const { userProfile, partnerProfile } = useAuth()
-  const { expenses, budget, loading } = useExpenses()
+  const { expenses, budget, categoryBudgets, loading } = useExpenses()
+  const flags = useFlags()
   const partnerName = partnerProfile?.displayName || 'Partner'
 
   const [preset, setPreset]     = useState('month')
@@ -262,6 +264,9 @@ export default function AnalyticsPage() {
                 {categoryData.map((cat) => {
                   const catId = CATEGORIES.find(c => c.label === cat.name)?.id || 'others'
                   const pct = total > 0 ? (cat.value / total) * 100 : 0
+                  const catBudget = flags.enableBudget ? (categoryBudgets?.[catId] ?? null) : null
+                  const budgetPct = catBudget ? Math.min((cat.value / catBudget) * 100, 100) : 0
+                  const isOver = catBudget && cat.value > catBudget
                   return (
                     <div key={cat.name}>
                       <div className="flex items-center justify-between mb-1">
@@ -271,14 +276,27 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="text-right">
                           <span className="text-sm font-bold text-karcha-text">{formatINR(cat.value)}</span>
-                          <span className="text-xs text-karcha-muted ml-2">{Math.round(pct)}%</span>
+                          {catBudget ? (
+                            <span className={`text-xs ml-2 font-semibold ${isOver ? 'text-red-500' : 'text-karcha-muted'}`}>
+                              {isOver ? `↑ over` : `/ ${formatINR(catBudget)}`}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-karcha-muted ml-2">{Math.round(pct)}%</span>
+                          )}
                         </div>
                       </div>
                       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${pct}%`, backgroundColor: CATEGORY_COLORS[catId] || '#6b7280' }}
-                        />
+                        {catBudget ? (
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${budgetPct}%`, backgroundColor: isOver ? '#ef4444' : (CATEGORY_COLORS[catId] || '#6b7280') }}
+                          />
+                        ) : (
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, backgroundColor: CATEGORY_COLORS[catId] || '#6b7280' }}
+                          />
+                        )}
                       </div>
                     </div>
                   )

@@ -63,6 +63,7 @@
 | Function | Firestore | Notes |
 |---|---|---|
 | `setBudget(coupleId, amount)` | write `couples/{coupleId}` | Sets `monthlyBudget` field |
+| `setCategoryBudgets(coupleId, budgets)` | write `couples/{coupleId}` | Sets `categoryBudgets` map `{ [catId]: amount }` |
 
 ### OTP rate limiting
 | Function | Firestore | Notes |
