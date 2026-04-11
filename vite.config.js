@@ -18,7 +18,7 @@ export default defineConfig({
         name: 'Karcha',
         short_name: 'Karcha',
         description: 'Expense tracker for couples',
-        theme_color: '#16a34a',
+        theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
