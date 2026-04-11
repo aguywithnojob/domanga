@@ -67,6 +67,12 @@ export default function DashboardPage() {
     return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
   }, [])
 
+  // Sync OS/browser status bar colour with online state
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', isOnline ? '#16a34a' : '#6b7280')
+  }, [isOnline])
+
   const { from, to } = thisMonthRange()
   const today = new Date()
 
