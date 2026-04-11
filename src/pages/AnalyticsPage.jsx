@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
-import { useFlags } from '../contexts/FeatureFlagContext'
 import { CATEGORY_COLORS, getCategoryMeta, CATEGORIES } from '../utils/categories'
 import { formatINR, toInputDate, thisMonthRange, thisWeekRange, lastMonthRange } from '../utils/formatUtils'
 import { isWithinInterval, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns'
@@ -78,7 +77,6 @@ export default function AnalyticsPage() {
   const { userProfile, partnerProfile } = useAuth()
   const { expenses, budget, loading } = useExpenses()
   const partnerName = partnerProfile?.displayName || 'Partner'
-  const flags = useFlags()
 
   const [preset, setPreset]     = useState('month')
   const [fromDate, setFromDate] = useState(toInputDate(thisMonthRange().from))
@@ -173,7 +171,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Budget insight card — only shown on This Month preset */}
-        {flags.enableBudget !== false && preset === 'month' && budget ? (
+        {preset === 'month' && budget ? (
           <div className="bg-white rounded-2xl p-4 shadow-card">
             <div className="flex items-start justify-between">
               <div>
@@ -208,7 +206,7 @@ export default function AnalyticsPage() {
               </div>
             )}
           </div>
-        ) : flags.enableBudget !== false && preset === 'month' && !budget ? (
+        ) : preset === 'month' && !budget ? (
           <a href="#/settings" className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-card border border-dashed border-primary-200">
             <p className="text-sm text-karcha-muted">Set a monthly budget to track progress</p>
             <span className="text-primary-600 text-sm font-semibold">→</span>

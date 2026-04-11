@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
-import { useFlags } from '../contexts/FeatureFlagContext'
 import { formatINR, thisMonthRange, formatDate } from '../utils/formatUtils'
 import { getCategoryMeta } from '../utils/categories'
 import { isWithinInterval, startOfDay, endOfDay, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
@@ -34,7 +33,6 @@ export default function DashboardPage() {
   const { userProfile, partnerProfile } = useAuth()
   const { expenses, budget, loading } = useExpenses()
   const partnerName = partnerProfile?.displayName || 'Partner'
-  const flags = useFlags()
   const [tab, setTab] = useState('all')
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [newExpenseIds, setNewExpenseIds] = useState(new Set())
@@ -113,9 +111,9 @@ export default function DashboardPage() {
     ]
   }, [expenses])
 
-  const recentAll     = expenses.slice(0, 10)
-  const recentMe      = expenses.filter(e => e.paidBy === userProfile?.id).slice(0, 10)
-  const recentPartner = expenses.filter(e => e.paidBy !== userProfile?.id).slice(0, 10)
+  const recentAll     = expenses.slice(0, 6)
+  const recentMe      = expenses.filter(e => e.paidBy === userProfile?.id).slice(0, 6)
+  const recentPartner = expenses.filter(e => e.paidBy !== userProfile?.id).slice(0, 6)
   const recent = tab === 'all' ? recentAll : tab === 'me' ? recentMe : recentPartner
 
   return (
@@ -151,8 +149,7 @@ export default function DashboardPage() {
         {/* Stats row — Budget · Avg/day · Week vs last */}
         <div className="grid grid-cols-3 gap-2">
           {/* Budget chip */}
-          {flags.enableBudget !== false ? (
-            budget ? (
+          {budget ? (
               <div className="bg-white rounded-xl p-3 shadow-card">
                 <p className="text-lg">{budgetOver ? '🔴' : '💰'}</p>
                 <p className="text-[10px] text-karcha-muted mt-0.5">Budget</p>
@@ -173,9 +170,9 @@ export default function DashboardPage() {
                 <p className="text-xs font-semibold text-primary-500 mt-0.5">Set →</p>
               </Link>
             )
-          ) : null}
+          }
 
-          <div className={`bg-white rounded-xl p-3 shadow-card ${flags.enableBudget === false ? 'col-span-1' : ''}`}>
+          <div className="bg-white rounded-xl p-3 shadow-card">
             <p className="text-lg">🧾</p>
             <p className="text-[10px] text-karcha-muted mt-0.5">Today</p>
             <p className="text-xs font-bold text-karcha-text mt-0.5">{formatINR(todayTotal)}</p>
@@ -232,7 +229,7 @@ export default function DashboardPage() {
                       {exp.description || meta.label}
                     </p>
                     <p className="text-karcha-muted text-xs mt-0.5">
-                      {formatDate(exp.date)} · {isMe ? 'You' : partnerName}
+                      {formatDate(exp.date)} · <span className={isMe ? 'text-primary-600 font-semibold' : 'text-accent-500 font-semibold'}>{isMe ? 'You' : partnerName}</span>
                     </p>
                   </div>
                   <p className="font-bold text-karcha-text text-sm flex-shrink-0">{formatINR(exp.amount)}</p>
