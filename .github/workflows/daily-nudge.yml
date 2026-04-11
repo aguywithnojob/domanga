@@ -16,8 +16,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install firebase-admin
-        run: npm install firebase-admin --no-save
+      - name: Cache script dependencies
+        id: cache-scripts
+        uses: actions/cache@v4
+        with:
+          path: scripts/node_modules
+          key: scripts-node-modules-${{ hashFiles('scripts/package-lock.json') }}
+
+      - name: Install script dependencies
+        if: steps.cache-scripts.outputs.cache-hit != 'true'
+        run: cd scripts && npm ci
 
       - name: Send daily nudge push notification
         run: |
