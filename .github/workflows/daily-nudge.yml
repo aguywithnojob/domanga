@@ -20,7 +20,10 @@ jobs:
         run: npm install firebase-admin --no-save
 
       - name: Send daily nudge push notification
-        run: node scripts/send-nudge.js
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > /tmp/sa.json
+          node scripts/send-nudge.js
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_SERVICE_ACCOUNT_FILE: /tmp/sa.json
           FIREBASE_PROJECT_ID: karcha-efaa5

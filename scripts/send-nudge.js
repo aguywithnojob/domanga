@@ -3,15 +3,29 @@
 // Required env vars:
 
 import { createRequire } from 'module'
+import { readFileSync } from 'fs'
 const require = createRequire(import.meta.url)
 const admin = require('firebase-admin')
 
-if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-  console.error('Error: FIREBASE_SERVICE_ACCOUNT secret is not set. Add it in GitHub repo → Settings → Secrets and variables → Actions.')
+// Prefer file-based secret (avoids JSON newline corruption in env vars)
+const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT_FILE
+  ? readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT_FILE, 'utf-8').trim()
+  : process.env.FIREBASE_SERVICE_ACCOUNT
+
+if (!rawJson) {
+  console.error('Error: FIREBASE_SERVICE_ACCOUNT secret is not set.')
   process.exit(1)
 }
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+let serviceAccount
+try {
+  serviceAccount = JSON.parse(rawJson)
+} catch {
+  console.error('Error: FIREBASE_SERVICE_ACCOUNT is not valid JSON.')
+  console.error('  Length:', rawJson.length, '| First 40 chars:', rawJson.slice(0, 40))
+  console.error('  Tip: delete & re-add the secret, pasting the raw .json file content.')
+  process.exit(1)
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
