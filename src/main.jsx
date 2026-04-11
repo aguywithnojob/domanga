@@ -6,6 +6,18 @@ import { registerSW } from 'virtual:pwa-register'
 
 registerSW({ immediate: true })
 
+// Capture install prompt as early as possible — before React mounts
+window.__installPrompt = null
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault()
+  window.__installPrompt = e
+  console.log('[PWA] beforeinstallprompt captured')
+})
+window.addEventListener('appinstalled', () => {
+  window.__installPrompt = null
+  console.log('[PWA] appinstalled fired')
+})
+
 // Force SW update check every time the user comes back to the app
 // This ensures a fresh deploy is picked up within seconds, not hours
 if ('serviceWorker' in navigator) {

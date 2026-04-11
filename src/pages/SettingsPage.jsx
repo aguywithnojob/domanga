@@ -19,6 +19,29 @@ export default function SettingsPage() {
   const [notifStatus, setNotifStatus] = useState(
     'Notification' in window ? Notification.permission : 'unsupported'
   )
+  const [installPrompt, setInstallPrompt] = useState(() => window.__installPrompt ?? null)
+  const [isInstalled, setIsInstalled]     = useState(
+    window.matchMedia('(display-mode: standalone)').matches
+  )
+
+  useEffect(() => {
+    function onBeforeInstall(e) {
+      e.preventDefault()
+      window.__installPrompt = e
+      setInstallPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', onBeforeInstall)
+    window.addEventListener('appinstalled', () => { setIsInstalled(true); setInstallPrompt(null); window.__installPrompt = null })
+    return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall)
+  }, [])
+
+  async function handleInstall() {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const { outcome } = await installPrompt.userChoice
+    if (outcome === 'accepted') setIsInstalled(true)
+    setInstallPrompt(null)
+  }
 
   useEffect(() => {
     async function load() {
@@ -91,7 +114,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-xl p-4 shadow-card">
           <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Monthly Budget</p>
           <div className="flex gap-2">
-            <div className="flex-1 flex items-center gap-2 border border-karcha-border rounded-lg px-3 py-2 focus-within:border-primary-500">
+            <div className="flex-1 min-w-0 flex items-center gap-2 border border-karcha-border rounded-lg px-3 py-2 focus-within:border-primary-500">
               <span className="text-primary-600 font-bold">₹</span>
               <input
                 type="number"
@@ -109,7 +132,7 @@ export default function SettingsPage() {
               {budgetSaved ? '✓ Saved' : 'Save'}
             </button>
           </div>
-          <p className="text-karcha-muted text-xs mt-2">Shared budget for both of you. Shows a progress bar on the dashboard.</p>
+          <p className="text-karcha-muted text-xs mt-2">Shared budget for both of you.</p>
         </div>
 
         {/* Notifications */}
@@ -167,6 +190,35 @@ export default function SettingsPage() {
             </div>
           </div>
         ) : null}        
+
+        {/* Install App — hidden if already installed */}
+        {!isInstalled && (
+          <div className="bg-white rounded-xl p-4 shadow-card">
+            <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Install App</p>
+            {installPrompt ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-karcha-text">Add to Home Screen</p>
+                  <p className="text-karcha-muted text-xs mt-0.5">Install for quick access</p>
+                </div>
+                <button
+                  onClick={handleInstall}
+                  className="flex-shrink-0 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-semibold active:scale-95 transition-transform"
+                >
+                  Install
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm font-semibold text-karcha-text">Add to Home Screen</p>
+                <p className="text-karcha-muted text-xs mt-1">
+                  On Android: browser menu (⋮) → Add to Home Screen<br />
+                  On iOS: Share button → Add to Home Screen
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Admin */}
         <Link

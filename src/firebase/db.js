@@ -163,7 +163,14 @@ export async function getExpenses(coupleId) {
       ...d.data(),
       date: d.data().date.toDate(),
     }))
-    .sort((a, b) => b.date - a.date)
+    .sort(byNewestFirst)
+}
+
+// Sort: createdAt desc (recently added first); fall back to date desc
+function byNewestFirst(a, b) {
+  const aTime = a.createdAt?.toMillis?.() ?? a.date.getTime()
+  const bTime = b.createdAt?.toMillis?.() ?? b.date.getTime()
+  return bTime - aTime
 }
 
 /**
@@ -182,7 +189,7 @@ export function subscribeExpenses(coupleId, onChange) {
         ...d.data(),
         date: d.data().date.toDate(),
       }))
-      .sort((a, b) => b.date - a.date)
+      .sort(byNewestFirst)
     onChange(data)
   })
 }
