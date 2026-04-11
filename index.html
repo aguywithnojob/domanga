@@ -10,6 +10,8 @@
     <script>
       try {
         var _f = JSON.parse(localStorage.getItem('karcha-flags') || '{}');
+        var _primary = _f.enabletheme ? '#2563eb' : '#16a34a';
+        document.documentElement.style.backgroundColor = _primary;
         if (_f.enabletheme) {
           document.documentElement.setAttribute('data-theme', 'blue');
           var _m = document.querySelector('meta[name="theme-color"]');
@@ -25,8 +27,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>Karcha</title>
-    <script type="module" crossorigin src="/domanga/assets/index-DTjEgQg2.js"></script>
-    <link rel="stylesheet" crossorigin href="/domanga/assets/index-CB30XWZx.css">
+    <script type="module" crossorigin src="/domanga/assets/index-Bb_g2_3l.js"></script>
+    <link rel="stylesheet" crossorigin href="/domanga/assets/index-8nI2qAWJ.css">
   <link rel="manifest" href="/domanga/manifest.webmanifest"></head>
   <body class="bg-karcha-bg font-sans">
     <div id="root"></div>
