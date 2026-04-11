@@ -181,11 +181,11 @@ function AdminPanel() {
 
           <div className="space-y-2 mb-4">
             {flagEntries.map(([name, value]) => (
-              <div key={name} className="flex items-center gap-2 py-1">
+              <div key={name} className="flex items-center gap-2 py-1 overflow-hidden">
                 {/* Text — min-w-0 + overflow-hidden ensures it never pushes the toggle off */}
                 <div className="flex-1 min-w-0 overflow-hidden">
                   <p className="text-sm font-semibold text-karcha-text truncate">{name}</p>
-                  <p className="text-[10px] text-karcha-muted">
+                  <p className="text-[10px] text-karcha-muted truncate">
                     {typeof value === 'boolean' ? (value ? 'Enabled' : 'Disabled') : String(value)}
                   </p>
                 </div>

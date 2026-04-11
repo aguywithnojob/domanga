@@ -97,7 +97,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={saveBudget}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform"
+              className="flex-shrink-0 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform whitespace-nowrap"
             >
               {budgetSaved ? '✓ Saved' : 'Save'}
             </button>
@@ -191,6 +191,11 @@ export default function SettingsPage() {
         >
           Sign Out
         </button>
+
+        {/* App version */}
+        <p className="text-center text-[10px] text-karcha-muted pt-1">
+          Karcha v{__APP_VERSION__.split('.').slice(0, 2).join('.')} &nbsp;&middot;&nbsp; built {new Date(__BUILD_TIME__).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </p>
       </div>
 
       <BottomNav />
