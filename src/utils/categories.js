@@ -19,6 +19,7 @@ export const CATEGORIES = [
   { id: 'household',     label: 'Household',      emoji: '🏡' },
   { id: 'fitness',       label: 'Fitness',        emoji: '🏋️' },
   { id: 'education',     label: 'Education',      emoji: '📚' },
+  { id: 'saloon',        label: 'Saloon',         emoji: '✂️' },
   { id: 'others',        label: 'Others',         emoji: '📦' },
 ]
 
@@ -47,5 +48,6 @@ export const CATEGORY_COLORS = {
   household:     '#65a30d',
   fitness:       '#dc2626',
   education:     '#2563eb',
+  saloon:        '#be185d',
   others:        '#6b7280',
 }
