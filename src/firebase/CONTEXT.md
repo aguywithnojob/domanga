@@ -53,7 +53,7 @@
 ### Expense functions
 | Function | Firestore | Notes |
 |---|---|---|
-| `addExpense(coupleId, paidBy, data)` | write `expenses` | data: {amount, category, description, date} |
+| `addExpense(coupleId, paidBy, data)` | write `expenses` | Uses `Timestamp.now()` (not `serverTimestamp`) so write resolves immediately offline |
 | `getExpenses(coupleId)` | read `expenses` where coupleId== | Sorted by createdAt desc |
 | `subscribeExpenses(coupleId, onChange)` | onSnapshot `expenses` where coupleId== | Real-time listener; returns unsubscribe fn. Used by ExpenseContext. |
 | `updateExpense(id, data)` | write `expenses/{id}` | Partial update |

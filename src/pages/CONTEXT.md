@@ -38,12 +38,13 @@
 ### `DashboardPage.jsx`
 - **Route:** `/dashboard`
 - **Purpose:** Home screen — month total, stats, recent expenses
-- **Key state:** `tab` (all/me/partner)
+- **Key state:** `tab` (all/me/partner), `isOnline`, `newExpenseIds` (Set)
 - **Consumes:** `useAuth()`, `useExpenses()`, `useFlags()`
 - **Displays:**
-  - Header with month total + You/Partner split bar (orange = You, yellow = Partner)
+  - Header with month total + You/Partner split bar — turns **grey** with wifi-off watermark when offline
   - 3-col stat grid: Budget chip · **Today** (today's total spend) · Week sparkline
   - Recent expenses tabbed by All / You / [PartnerName]
+  - New expense rows flash green → white for 2s when added via `onSnapshot`
 - **Feature flags:** `enableBudget` hides budget chip if `false`
 - **Partner name:** Uses `partnerProfile.displayName` from AuthContext
 
@@ -53,7 +54,7 @@
 - **Key state:** `amount`, `category`, `description`, `date`, `loading`
 - **Consumes:** `useExpenses()`, `useCategories()`
 - **Firestore write:** `expenses` via `addNew()`
-- **Notes:** Category is native `<select>`. Amount validated > 0.
+- **Notes:** Category is native `<select>`. Amount validated > 0. Uses fire-and-forget `addNew()` — navigates to dashboard immediately without waiting for server.
 
 ### `EditExpensePage.jsx`
 - **Route:** `/edit/:id`

@@ -50,9 +50,14 @@ export default {
           '0%':   { opacity: '0', transform: 'translateY(-8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'flash-green': {
+          '0%':   { backgroundColor: '#bbf7d0' },
+          '100%': { backgroundColor: '#ffffff' },
+        },
       },
       animation: {
-        'fade-in': 'fade-in 0.2s ease-out',
+        'fade-in':     'fade-in 0.2s ease-out',
+        'flash-green': 'flash-green 2s ease-out forwards',
       },
     },
   },

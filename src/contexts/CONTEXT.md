@@ -48,7 +48,7 @@ FlagProvider        ← outermost (flags needed by AuthProvider children)
 | `expenses` | array | All expenses for the couple, sorted by `createdAt` desc (most recently added first) |
 | `budget` | number \| null | `couples.monthlyBudget` |
 | `loading` | boolean | True while fetching |
-| `addNew(data)` | async fn | Add expense — onSnapshot auto-updates list |
+| `addNew(data)` | fn | Fire-and-forget (no await) — resolves instantly online or offline; onSnapshot auto-updates list |
 | `edit(id, data)` | async fn | Update expense — onSnapshot auto-updates list |
 | `remove(id)` | async fn | Delete expense — onSnapshot auto-updates list |
 

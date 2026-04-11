@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
@@ -37,6 +37,29 @@ export default function DashboardPage() {
   const flags = useFlags()
   const [tab, setTab] = useState('all')
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [newExpenseIds, setNewExpenseIds] = useState(new Set())
+  const prevIdsRef = useRef(null)
+
+  // Track newly-arrived expenses to flash them
+  useEffect(() => {
+    if (prevIdsRef.current === null) {
+      prevIdsRef.current = new Set(expenses.map(e => e.id))
+      return
+    }
+    const prevIds = prevIdsRef.current
+    const incoming = expenses.filter(e => !prevIds.has(e.id)).map(e => e.id)
+    prevIdsRef.current = new Set(expenses.map(e => e.id))
+    if (incoming.length === 0) return
+    setNewExpenseIds(prev => new Set([...prev, ...incoming]))
+    const timer = setTimeout(() => {
+      setNewExpenseIds(prev => {
+        const next = new Set(prev)
+        incoming.forEach(id => next.delete(id))
+        return next
+      })
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [expenses])
 
   useEffect(() => {
     const up   = () => setIsOnline(true)
@@ -200,7 +223,7 @@ export default function DashboardPage() {
               const meta = getCategoryMeta(exp.category)
               const isMe = exp.paidBy === userProfile?.id
               return (
-                <div key={exp.id} className="bg-white rounded-xl px-4 py-3 flex items-center gap-3 shadow-card">
+                <div key={exp.id} className={`rounded-xl px-4 py-3 flex items-center gap-3 shadow-card ${newExpenseIds.has(exp.id) ? 'animate-flash-green' : 'bg-white'}`}>
                   <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center text-lg flex-shrink-0">
                     {meta.emoji}
                   </div>
