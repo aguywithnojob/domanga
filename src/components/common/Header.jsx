@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 export default function Header({ title, backTo, action }) {
   const navigate = useNavigate()
   return (
-    <header className="flex items-center justify-between px-5 pt-12 pb-4 bg-white sticky top-0 z-40 border-b border-karcha-border/50">
+    <header className="flex items-center justify-between px-5 pt-safe-top pb-4 bg-white sticky top-0 z-40 border-b border-karcha-border/50">
       <div className="flex items-center gap-3">
         {backTo && (
           <button
