@@ -46,6 +46,10 @@ html[data-theme="blue"] {
     -webkit-font-smoothing: antialiased;
   }
 
+  html {
+    background-color: rgb(var(--color-primary-600));
+  }
+
   body {
     background-color: #f9fafb;
     font-family: 'Inter', system-ui, sans-serif;
