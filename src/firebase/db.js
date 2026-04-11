@@ -9,6 +9,7 @@ import {
   query,
   where,
   getDocs,
+  onSnapshot,
   serverTimestamp,
   Timestamp,
   increment,
@@ -163,6 +164,27 @@ export async function getExpenses(coupleId) {
       date: d.data().date.toDate(),
     }))
     .sort((a, b) => b.date - a.date)
+}
+
+/**
+ * Real-time listener for expenses. Calls onChange with sorted array on every change.
+ * Returns an unsubscribe function.
+ */
+export function subscribeExpenses(coupleId, onChange) {
+  const q = query(
+    collection(db, 'expenses'),
+    where('coupleId', '==', coupleId)
+  )
+  return onSnapshot(q, snap => {
+    const data = snap.docs
+      .map(d => ({
+        id: d.id,
+        ...d.data(),
+        date: d.data().date.toDate(),
+      }))
+      .sort((a, b) => b.date - a.date)
+    onChange(data)
+  })
 }
 
 export async function deleteExpense(expenseId) {
