@@ -77,10 +77,13 @@ export default function SettingsPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-accent-500 rounded-xl flex items-center justify-center text-xl font-bold text-white select-none">
               {userProfile?.displayName?.[0]?.toUpperCase() || '?'}
             </div>
-            <div>
+            <div className="flex-1">
               <p className="font-bold text-karcha-text">{userProfile?.displayName}</p>
               <p className="text-karcha-muted text-sm">{userProfile?.phone}</p>
             </div>
+            <button onClick={handleLogout} className="text-xs font-semibold text-red-400 active:opacity-60">
+              Sign out
+            </button>
           </div>
         </div>
 
@@ -163,18 +166,7 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-        ) : null}
-
-        {/* About */}
-        <div className="bg-white rounded-xl p-4 shadow-card">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">💸</span>
-            <div>
-              <p className="font-semibold text-karcha-text text-sm">Karcha v1.0</p>
-              <p className="text-karcha-muted text-xs">Expense tracker for couples</p>
-            </div>
-          </div>
-        </div>
+        ) : null}        
 
         {/* Admin */}
         <Link
@@ -188,17 +180,9 @@ export default function SettingsPage() {
           <span className="text-karcha-muted text-sm">›</span>
         </Link>
 
-        {/* Sign out */}
-        <button
-          onClick={handleLogout}
-          className="w-full bg-red-50 border border-red-100 text-red-500 font-semibold py-3 rounded-xl text-sm active:scale-95 transition-transform"
-        >
-          Sign Out
-        </button>
-
         {/* App version */}
         <p className="text-center text-[10px] text-karcha-muted pt-1">
-          Karcha v{__APP_VERSION__.split('.').slice(0, 2).join('.')} &nbsp;&middot;&nbsp; built {new Date(__BUILD_TIME__).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          Karcha v{__APP_VERSION__.split('.').slice(0, 2).join('.')} &nbsp;&middot;&nbsp; {new Date(__BUILD_TIME__).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
         </p>
       </div>
 
