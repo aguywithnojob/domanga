@@ -29,7 +29,7 @@ export default {
         },
         success: '#16a34a',
         karcha: {
-          bg: 'rgb(var(--color-primary-50) / <alpha-value>)',
+          bg: '#f9fafb',
           card: '#ffffff',
           text: '#1f2937',
           muted: '#6b7280',

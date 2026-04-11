@@ -47,7 +47,7 @@ html[data-theme="blue"] {
   }
 
   body {
-    background-color: rgb(var(--color-primary-50));
+    background-color: #f9fafb;
     font-family: 'Inter', system-ui, sans-serif;
     overscroll-behavior-y: none;
   }

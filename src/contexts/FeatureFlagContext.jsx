@@ -20,13 +20,24 @@ export function useThemeColors() {
   }
 }
 
+const FLAGS_CACHE_KEY = 'karcha-flags'
+
+function readCachedFlags() {
+  try { return JSON.parse(localStorage.getItem(FLAGS_CACHE_KEY) ?? 'null') ?? {} }
+  catch { return {} }
+}
+
 export function FlagProvider({ children }) {
-  const [flags, setFlags] = useState({})
+  const [flags, setFlags] = useState(readCachedFlags)
 
   useEffect(() => {
     const unsub = onSnapshot(
       doc(db, 'config', 'features'),
-      snap => setFlags(snap.exists() ? snap.data() : {}),
+      snap => {
+        const data = snap.exists() ? snap.data() : {}
+        setFlags(data)
+        try { localStorage.setItem(FLAGS_CACHE_KEY, JSON.stringify(data)) } catch {}
+      },
       () => {} // silently ignore permission errors (not yet signed in)
     )
     return unsub
