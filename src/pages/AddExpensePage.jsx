@@ -26,7 +26,7 @@ export default function AddExpensePage() {
     if (!date)             { setError('Select a date.'); return }
     setLoading(true)
     try {
-      await addNew({ amount: amt, category, description: description.trim(), date })
+      addNew({ amount: amt, category, description: description.trim(), date })
       navigate('/dashboard', { replace: true })
     } catch (err) {
       setError('Failed to save. Please try again.')

@@ -45,17 +45,18 @@ FlagProvider        ← outermost (flags needed by AuthProvider children)
 **Provides:**
 | Value | Type | Description |
 |---|---|---|
-| `expenses` | array | All expenses for the couple, sorted date desc |
+| `expenses` | array | All expenses for the couple, sorted by `createdAt` desc (most recently added first) |
 | `budget` | number \| null | `couples.monthlyBudget` |
 | `loading` | boolean | True while fetching |
-| `addNew(data)` | async fn | Add expense + refresh list |
-| `edit(id, data)` | async fn | Update expense + refresh list |
-| `remove(id)` | async fn | Delete expense (optimistic local remove) |
-| `refresh()` | async fn | Manual refetch |
+| `addNew(data)` | async fn | Add expense — onSnapshot auto-updates list |
+| `edit(id, data)` | async fn | Update expense — onSnapshot auto-updates list |
+| `remove(id)` | async fn | Delete expense — onSnapshot auto-updates list |
 
 **Behavior:**
-- Auto-fetches when `userProfile.coupleId` changes
-- Fetches both expenses list and couple doc (for budget) in parallel
+- Uses `subscribeExpenses` (Firestore `onSnapshot`) — **real-time for both users**
+- Partner's screen updates automatically when you add/edit/delete
+- Offline writes are queued by Firestore SDK (IndexedDB) and synced on reconnect
+- Budget fetched once via `getCouple` (infrequent changes)
 
 **Used by:** DashboardPage, AddExpensePage, EditExpensePage, ExpensesPage, AnalyticsPage
 

@@ -28,8 +28,9 @@ export function ExpenseProvider({ children }) {
   }, [userProfile?.coupleId])
 
   async function addNew(data) {
-    await addExpense(userProfile.coupleId, userProfile.id, data)
-    // No manual refresh needed — onSnapshot fires automatically
+    // Don't await — addDoc resolves only when server confirms.
+    // Local cache + onSnapshot update the list immediately offline too.
+    addExpense(userProfile.coupleId, userProfile.id, data)
   }
 
   async function edit(id, data) {

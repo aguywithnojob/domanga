@@ -9,9 +9,9 @@
 
 | File | Purpose |
 |---|---|
-| `config.js` | Firebase app init. Exports `app`, `auth`, `db`. Throws if env vars missing. |
+| `config.js` | Firebase app init. Exports `app`, `auth`, `db`. Throws if env vars missing. Enables Firestore offline persistence. |
 | `auth.js` | Phone OTP — send + verify. Rate limit check. reCAPTCHA setup. |
-| `db.js` | All Firestore CRUD — users, couples, expenses, budget, OTP limits. |
+| `db.js` | All Firestore CRUD — users, couples, expenses, budget, OTP limits. Real-time `subscribeExpenses`. |
 | `admin.js` | Admin-only Firestore ops — feature flags, categories, admin auth. |
 | `messaging.js` | FCM push — get token, save to user doc, listen for foreground messages. |
 
@@ -21,6 +21,7 @@
 - **Exports:** `app`, `auth`, `db`
 - **Source:** `import.meta.env.VITE_FIREBASE_*`
 - **Note:** Throws hard error if `VITE_FIREBASE_API_KEY` or `VITE_FIREBASE_PROJECT_ID` missing.
+- **Offline:** Uses `initializeFirestore` with `persistentLocalCache` + `persistentMultipleTabManager`. Writes queued in IndexedDB when offline, synced on reconnect.
 
 ---
 
@@ -53,7 +54,8 @@
 | Function | Firestore | Notes |
 |---|---|---|
 | `addExpense(coupleId, paidBy, data)` | write `expenses` | data: {amount, category, description, date} |
-| `getExpenses(coupleId)` | read `expenses` where coupleId== | Sorted by date desc |
+| `getExpenses(coupleId)` | read `expenses` where coupleId== | Sorted by createdAt desc |
+| `subscribeExpenses(coupleId, onChange)` | onSnapshot `expenses` where coupleId== | Real-time listener; returns unsubscribe fn. Used by ExpenseContext. |
 | `updateExpense(id, data)` | write `expenses/{id}` | Partial update |
 | `deleteExpense(id)` | delete `expenses/{id}` | |
 

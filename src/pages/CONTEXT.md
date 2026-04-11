@@ -87,11 +87,13 @@
 ### `SettingsPage.jsx`
 - **Route:** `/settings`
 - **Purpose:** User preferences + couple management
-- **Key state:** `couple`, `budgetInput`, `budgetSaved`, `notifStatus`
+- **Key state:** `couple`, `budgetInput`, `budgetSaved`, `notifStatus`, `installPrompt`, `isInstalled`
 - **Consumes:** `useAuth()`
 - **Firestore read:** `couples/{coupleId}`
 - **Firestore write:** `couples` (setBudget), `users` (fcmToken via subscribePush)
-- **Features:** Profile card, budget input, notification enable button, invite code copy, Admin link, Sign out.
+- **Features:** Profile card + inline Sign out, budget input, notification enable, invite code copy, PWA install button, Admin link, app version footer.
+- **Offline fix:** `subscribePush` called on mount if `Notification.permission === 'granted'` — ensures FCM token saved even if user previously accepted without button tap.
+- **Install prompt:** Captured in `main.jsx` via `window.__installPrompt` before React mounts to avoid missing early `beforeinstallprompt` event.
 
 ### `AdminPage.jsx`
 - **Route:** `/admin`
@@ -102,3 +104,11 @@
 - **Firestore write:** `config/features`, `config/categories`
 - **Features:** Toggle feature flags, enable/disable categories, add/delete custom categories.
 - **Admin credentials:** Username `Admin`, password `Admin` (SHA-256 stored in Firestore `config/adminAuth`).
+- **Toggle bug fix:** Knob uses `left-[22px]`/`left-0.5` CSS positioning (not `translate`) for mobile WebKit reliability.
+
+### `NotificationsPage.jsx`
+- **Route:** `/notifications`
+- **Purpose:** In-app notification inbox — last 5 push notifications
+- **Key state:** Managed by `NotifContext` (localStorage-backed)
+- **Features:** Shows last 5 notifications with relative timestamps, "Clear all" button, marks all as read on mount.
+- **Access:** Bell icon (🔔) in Header — red dot appears when unread count > 0.

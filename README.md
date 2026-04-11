@@ -29,16 +29,19 @@
 - Dynamic category list — enable/disable built-in categories, add custom ones via Admin panel
 - Monthly budget — set a budget, track a live progress bar on the dashboard
 - Dashboard with You / [Partner name] / All tabs — shows partner's real name everywhere
-- Stat chips — average spend per day and week-over-week sparkline
+- Stat chips — Today's total and week-over-week sparkline
 - Budget sparkline on Insights — dual line showing your spend vs partner's spend per day
 - Monthly / weekly / custom date range analysis on Insights screen
 - Category breakdown bar list and You vs Partner chart on Insights
 - Filter and search expenses on the Expenses screen
+- **Real-time sync** — both users' screens update instantly when an expense is added, edited, or deleted (Firestore `onSnapshot`)
+- **Offline-first** — add expenses with no internet; changes queue in IndexedDB and sync automatically on reconnect
+- **In-app notification inbox** — last 5 push notifications with timestamps, red dot badge, clear all
 - **Admin panel** (`/admin`) — manage feature flags and categories from Firestore without redeploying
 - **Feature flags** — toggle app features on/off from Firestore in real time
 - **FCM push notifications** — real banner notifications + daily 11 PM nudge via GitHub Actions cron
 - Fully mobile-optimized UI with emerald green theme
-- PWA — installable on iPhone and Android, works offline (Workbox service worker)
+- PWA — installable on iPhone and Android via Settings → Install App button
 - Completely serverless — Firebase handles auth and database
 - Hosted free on GitHub Pages
 
@@ -51,7 +54,8 @@
 | UI Framework | React 18 + Vite |
 | Styling | Tailwind CSS v3 (custom emerald green palette) |
 | Auth | Firebase Phone OTP |
-| Database | Firebase Firestore |
+| Database | Firebase Firestore (real-time `onSnapshot`) |
+| Offline Storage | Firestore IndexedDB persistent cache (`persistentLocalCache`) |
 | Push Notifications | Firebase Cloud Messaging (FCM) |
 | Charts | Recharts (bar chart) |
 | Routing | React Router v6 (HashRouter) |
@@ -219,8 +223,6 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173).
-
-> OTP on `localhost` uses test phone numbers. Add them in **Firebase Console → Authentication → Sign-in method → Phone → Phone numbers for testing** (e.g. `+91 9999999999` / OTP `123456`).
 
 ---
 

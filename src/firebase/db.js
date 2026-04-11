@@ -140,6 +140,8 @@ export async function getCouple(coupleId) {
 // ─── Expenses ─────────────────────────────────────────────────────────────────
 
 export async function addExpense(coupleId, paidBy, data) {
+  // Use local timestamp so addDoc resolves immediately even when offline.
+  // serverTimestamp() blocks forever when there's no network connection.
   return addDoc(collection(db, 'expenses'), {
     coupleId,
     paidBy,
@@ -147,7 +149,7 @@ export async function addExpense(coupleId, paidBy, data) {
     category: data.category,
     description: data.description || '',
     date: Timestamp.fromDate(new Date(data.date)),
-    createdAt: serverTimestamp(),
+    createdAt: Timestamp.now(),
   })
 }
 

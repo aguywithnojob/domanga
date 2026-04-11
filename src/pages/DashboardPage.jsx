@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
@@ -36,6 +36,15 @@ export default function DashboardPage() {
   const partnerName = partnerProfile?.displayName || 'Partner'
   const flags = useFlags()
   const [tab, setTab] = useState('all')
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const up   = () => setIsOnline(true)
+    const down = () => setIsOnline(false)
+    window.addEventListener('online', up)
+    window.addEventListener('offline', down)
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [])
 
   const { from, to } = thisMonthRange()
   const today = new Date()
@@ -89,7 +98,12 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-karcha-bg pb-24">
       {/* Header */}
-      <div className="bg-primary-600 px-5 pt-12 pb-6">
+      <div className={`relative overflow-hidden px-5 pt-12 pb-6 ${isOnline ? 'bg-primary-600' : 'bg-gray-500'}`}>
+        {!isOnline && (
+          <svg className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10" width="120" height="120" viewBox="0 0 24 24" fill="white">
+            <path d="M2.28 3L1 4.27l2.1 2.1A11.95 11.95 0 0 0 1.2 8.55l1.8 1.35A9.93 9.93 0 0 1 5.17 7.6l1.47 1.47A7.95 7.95 0 0 0 4.8 10.9l1.8 1.35a5.96 5.96 0 0 1 2.2-1.87l1.55 1.55A3.98 3.98 0 0 0 8 15a4 4 0 0 0 4 4 3.98 3.98 0 0 0 3.07-1.45L20.73 23 22 21.72 2.28 3zM12 17a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm7.56-8.45 1.44-1.08-.36-.45A11.9 11.9 0 0 0 15.5 4.7l-1.44 1.08a9.93 9.93 0 0 1 5.5 2.77zm-3.02 2.27 1.5 1.5a5.98 5.98 0 0 0-2.04-1.5zm-2.5-2.5 1.5 1.5A3.98 3.98 0 0 0 16 12a3.98 3.98 0 0 0-1.96.32z"/>
+          </svg>
+        )}
         <p className="text-white/70 text-sm">Hey {userProfile?.displayName} 👋</p>
         <div className="flex items-end justify-between mt-1">
           <div>

@@ -20,7 +20,7 @@ import AdminPage        from './pages/AdminPage'
 
 function AppRoutes() {
   const { firebaseUser, loading } = useAuth()
-  const [toast, setToast] = useState(null)
+  const [toast, setToast]     = useState(null)
 
   useEffect(() => {
     // Only listen for foreground FCM messages if browser supports it
