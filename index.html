@@ -7,6 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#16a34a" />
     <meta name="description" content="Karcha — expense analyzer for couples" />
+    <script>
+      try {
+        var _f = JSON.parse(localStorage.getItem('karcha-flags') || '{}');
+        if (_f.enabletheme) {
+          document.documentElement.setAttribute('data-theme', 'blue');
+          var _m = document.querySelector('meta[name="theme-color"]');
+          if (_m) _m.content = '#2563eb';
+        }
+      } catch(e) {}
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

@@ -49,7 +49,7 @@ export async function setCategoryBudgets(coupleId, budgets) {
 
 // ─── OTP Rate Limiting ───────────────────────────────────────────────────────
 // Stores send attempts per phone. Max 5 sends per 24 hours.
-const OTP_MAX_PER_DAY = 5
+const OTP_MAX_PER_DAY = 10
 const OTP_WINDOW_MS   = 24 * 60 * 60 * 1000 // 24 hours
 
 function phoneToDocId(phone) {

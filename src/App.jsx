@@ -22,11 +22,14 @@ import CategoryBudgetPage from './pages/CategoryBudgetPage'
 function ThemeApplier() {
   const { enabletheme } = useFlags()
   useEffect(() => {
+    const primaryColor = enabletheme ? '#2563eb' : '#16a34a'
     if (enabletheme) {
       document.documentElement.setAttribute('data-theme', 'blue')
     } else {
       document.documentElement.removeAttribute('data-theme')
     }
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', primaryColor)
   }, [enabletheme])
   return null
 }
