@@ -28,6 +28,10 @@ export default function SettingsPage() {
         if (c?.monthlyBudget) setBudgetInput(String(c.monthlyBudget))
       }
       setLoading(false)
+      // If permission already granted, ensure FCM token is saved to Firestore
+      if ('Notification' in window && Notification.permission === 'granted' && userProfile?.id) {
+        subscribePush(userProfile.id)
+      }
     }
     load()
   }, [userProfile])
