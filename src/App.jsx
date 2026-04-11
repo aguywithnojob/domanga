@@ -23,13 +23,19 @@ function AppRoutes() {
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
-    // Listen for FCM push messages when app is in the foreground
-    const unsub = onForegroundMessage(payload => {
-      const { title = 'Karcha 💸', body = '' } = payload.notification ?? {}
-      setToast({ title, body })
-      setTimeout(() => setToast(null), 4000)
-    })
-    return unsub
+    // Only listen for foreground FCM messages if browser supports it
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return
+    let unsub
+    try {
+      unsub = onForegroundMessage(payload => {
+        const { title = 'Karcha 💸', body = '' } = payload.notification ?? {}
+        setToast({ title, body })
+        setTimeout(() => setToast(null), 4000)
+      })
+    } catch (e) {
+      // FCM not supported in this browser — silently ignore
+    }
+    return () => unsub?.()
   }, [])
 
   if (loading) return <PageLoader />

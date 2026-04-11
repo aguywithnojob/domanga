@@ -11,25 +11,29 @@ precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
 // ─── Firebase Cloud Messaging (background push) ───────────────────────────────
-const app = initializeApp({
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
-})
-
-const messaging = getMessaging(app)
-
-onBackgroundMessage(messaging, payload => {
-  const { title = 'Karcha 💸', body = '' } = payload.notification ?? {}
-  self.registration.showNotification(title, {
-    body,
-    icon: '/domanga/icon-192.png',
-    badge: '/domanga/icon-192.png',
+// Guard: only init FCM if all required env vars were injected at build time
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID
+if (projectId) {
+  const app = initializeApp({
+    apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId,
+    storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId:             import.meta.env.VITE_FIREBASE_APP_ID,
   })
-})
+
+  const messaging = getMessaging(app)
+
+  onBackgroundMessage(messaging, payload => {
+    const { title = 'Karcha 💸', body = '' } = payload.notification ?? {}
+    self.registration.showNotification(title, {
+      body,
+      icon: '/domanga/icon-192.png',
+      badge: '/domanga/icon-192.png',
+    })
+  })
+}
 
 // ─── Notification click → focus/open app ─────────────────────────────────────
 self.addEventListener('notificationclick', event => {

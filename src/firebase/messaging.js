@@ -4,7 +4,12 @@ import { updateUser } from './db'
 
 let _messaging = null
 function getMsg() {
-  if (!_messaging) _messaging = getMessaging(app)
+  if (!_messaging) {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      throw new Error('FCM not supported in this environment')
+    }
+    _messaging = getMessaging(app)
+  }
   return _messaging
 }
 

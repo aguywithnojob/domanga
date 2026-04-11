@@ -4,6 +4,8 @@
 //   FIREBASE_SERVICE_ACCOUNT  — JSON string of the service account key
 //   FIREBASE_PROJECT_ID       — Firebase project ID
 
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 const admin = require('firebase-admin')
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
