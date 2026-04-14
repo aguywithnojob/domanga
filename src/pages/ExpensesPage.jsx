@@ -105,7 +105,8 @@ export default function ExpensesPage() {
   const [toDate, setToDate]     = useState(toInputDate(mTo))
   const [catFilter, setCatFilter] = useState('all')
   const [personFilter, setPerson] = useState('all')
-  const [deleting, setDeleting]   = useState(null)  const [selected, setSelected]     = useState(null)
+  const [deleting, setDeleting]   = useState(null)
+  const [selected, setSelected]   = useState(null)
   const filtered = useMemo(() => {
     return expenses.filter(e => {
       const inRange = isWithinInterval(new Date(e.date), {

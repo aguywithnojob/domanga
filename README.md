@@ -1,6 +1,6 @@
 # Karcha 💸
 
-> Expense tracker for couples — log, analyze, and manage shared spending together.
+> Expense analyzer for couples — track, split, and analyze shared spending together.
 
 **Live App:** https://aguywithnojob.github.io/domanga/
 
@@ -10,41 +10,30 @@
 
 1. [Features](#features)
 2. [Tech Stack](#tech-stack)
-3. [Architecture Diagram](#architecture-diagram)
-4. [Project Structure](#project-structure)
-5. [Step 1 — Clone & Install](#step-1--clone--install)
-6. [Step 2 — Run Locally](#step-2--run-locally)
-7. [Step 3 — Enable Push Notifications](#step-4--enable-push-notifications)
-8. [Firestore Security Rules](#firestore-security-rules)
-9. [How Couple Linking Works](#how-couple-linking-works)
+3. [Step 1 — Firebase Project Setup](#step-1--firebase-project-setup)
+4. [Step 2 — Enable Phone Authentication](#step-2--enable-phone-authentication)
+5. [Step 3 — Create Firestore Database](#step-3--create-firestore-database)
+6. [Step 4 — Get Firebase Config Keys](#step-4--get-firebase-config-keys)
+7. [Step 5 — Clone & Install](#step-5--clone--install)
+8. [Step 6 — Configure Environment Variables](#step-6--configure-environment-variables)
+9. [Step 7 — Run Locally](#step-7--run-locally)
+10. [Step 8 — Deploy to GitHub Pages](#step-8--deploy-to-github-pages)
+11. [Step 9 — Add GitHub Pages Domain to Firebase](#step-9--add-github-pages-domain-to-firebase)
+12. [How Couple Linking Works](#how-couple-linking-works)
+13. [Project Structure](#project-structure)
 
 ---
 
 ## Features
 
-- Phone OTP authentication — no password, no email
-- OTP rate limiting — max 5 sends per phone per 24 hours (stored in Firestore)
-- Link two accounts with a 6-digit couple invite code
-- Add / edit / delete expenses by category, amount, date, and person
-- Dynamic category list — enable/disable built-in categories, add custom ones via Admin panel
-- Monthly budget — set a budget, track a live progress bar on the dashboard
-- **Category budgets** (feature-flagged via `enableBudget`) — set per-category monthly limits; Insights shows budget vs spent bars per category, red when over
-- Dashboard with You / [Partner name] / All tabs — shows partner's real name everywhere
-- Stat chips — Today's total and week-over-week sparkline
-- Budget sparkline on Insights — dual line showing your spend vs partner's spend per day
-- Monthly / weekly / custom date range analysis on Insights screen
-- Category breakdown bar list and You vs Partner chart on Insights
-- Filter and search expenses on the Expenses screen
-- **Real-time sync** — both users' screens update instantly when an expense is added, edited, or deleted (Firestore `onSnapshot`)
-- **Offline-first** — add expenses with no internet; changes queue in IndexedDB and sync automatically on reconnect
-- **In-app notification inbox** — last 5 push notifications with timestamps, red dot badge, clear all
-- **Admin panel** (`/admin`) — manage feature flags and categories from Firestore without redeploying
-- **Feature flags** — toggle app features on/off from Firestore in real time
-- **FCM push notifications** — real banner notifications + daily 11 PM nudge via GitHub Actions cron
-- Fully mobile-optimized UI with emerald green theme
-- PWA — installable on iPhone and Android via Settings → Install App button
-- Completely serverless — Firebase handles auth and database
-- Hosted free on GitHub Pages
+- **Auth** — Phone OTP or Email/Password; couple linked via 6-digit invite code
+- **Expenses** — add, edit, delete; tap any row for a full detail sheet with actions
+- **Insights** — monthly / weekly / custom range; category breakdown + You vs Partner chart
+- **Budgets** — monthly budget with progress bar; per-category limits with over-budget alerts
+- **Real-time + Offline** — both screens sync instantly; expenses queue offline and auto-sync on reconnect
+- **PWA** — installable on iOS & Android; push notifications with in-app inbox
+- **Admin panel** — manage feature flags and custom categories without redeploying
+- Serverless — Firebase handles auth & database; hosted free on GitHub Pages
 
 ---
 
@@ -53,77 +42,164 @@
 | Layer | Tool |
 |---|---|
 | UI Framework | React 18 + Vite |
-| Styling | Tailwind CSS v3 (custom emerald green palette) |
+| Styling | Tailwind CSS v3 |
 | Auth | Firebase Phone OTP |
-| Database | Firebase Firestore (real-time `onSnapshot`) |
-| Offline Storage | Firestore IndexedDB persistent cache (`persistentLocalCache`) |
-| Push Notifications | Firebase Cloud Messaging (FCM) |
-| Charts | Recharts (bar chart) |
+| Database | Firebase Firestore |
+| Charts | Recharts |
 | Routing | React Router v6 (HashRouter) |
-| PWA | vite-plugin-pwa + Workbox (injectManifest strategy) |
-| Date Utils | date-fns |
 | Font | Inter (Google Fonts) |
 | Deploy | GitHub Pages via `gh-pages` |
-| Daily Nudge | GitHub Actions cron + `firebase-admin` |
 
 ---
 
-## Architecture Diagram
+## Step 1 — Firebase Project Setup
 
-```mermaid
-flowchart TD
-    subgraph Entry["Entry & Routing (App.jsx)"]
-        main["main.jsx\nRegisters PWA service worker"]
-        App["App.jsx\nHashRouter + FlagProvider + AuthProvider + ExpenseProvider\nForeground FCM toast listener"]
-        main --> App
-    end
+1. Go to [https://console.firebase.google.com](https://console.firebase.google.com)
+2. Click **"Add project"**
+3. Name it `karcha` (or anything you prefer)
+4. Disable Google Analytics (not needed) → Click **"Create project"**
+5. Wait for the project to be created → Click **"Continue"**
 
-    subgraph Contexts["React Contexts"]
-        FlagCtx["FeatureFlagContext.jsx\nonSnapshot config/features\nProvides: { enableBudget, ... }"]
-        AuthCtx["AuthContext.jsx\nfirebaseUser\nuserProfile + partnerProfile\nauthLoading"]
-        ExpCtx["ExpenseContext.jsx\nexpenses[]\nbudget\naddNew / edit / remove"]
-    end
+---
 
-    subgraph PublicPages["Public Pages"]
-        Login["LoginPage.jsx\nPhone input + OTP rate limit"]
-        OTP["OTPPage.jsx\n6-digit OTP verify"]
-        Setup["ProfileSetupPage.jsx\nCreate or join couple"]
-    end
+## Step 2 — Enable Phone Authentication
 
-    subgraph ProtectedPages["Protected Pages (RequireAuth)"]
-        Dash["DashboardPage.jsx\nBudget bar, stat chips\nYou / PartnerName / All tabs"]
-        Add["AddExpensePage.jsx\nuseCategories()"]
-        Edit["EditExpensePage.jsx\nuseCategories()"]
-        Expenses["ExpensesPage.jsx\nuseFilteredExpenses"]
-        Analytics["AnalyticsPage.jsx\nDual sparkline, category list\nYou vs PartnerName chart"]
-        Settings["SettingsPage.jsx\nBudget, FCM opt-in, invite code"]
-        Admin["AdminPage.jsx\nFeature flags + categories"]
-    end
+1. In the Firebase Console sidebar, click **"Build"** → **"Authentication"**
+2. Click **"Get started"**
+3. Under **"Sign-in method"** tab, find **"Phone"** and click it
+4. Toggle **"Enable"** → Click **"Save"**
 
-    subgraph FirebaseLayer["Firebase Layer"]
-        configJs["config.js — app init"]
-        authJs["auth.js — OTP"]
-        dbJs["db.js — users/couples/expenses"]
-        adminJs["admin.js — flags + categories"]
-        messagingJs["messaging.js — FCM token + foreground"]
-        swJs["sw.js (service worker)\nWorkbox + FCM background handler"]
-    end
+> **Important:** Firebase Phone Auth requires a real phone number and will send actual SMS messages. For testing locally, you can add test phone numbers:
+> - In Authentication → Sign-in method → Phone, scroll down to **"Phone numbers for testing"**
+> - Add a test number like `+91 9999999999` with OTP `123456`
+> - This avoids SMS charges during development
 
-    subgraph GHActions["GitHub Actions"]
-        nudge[".github/workflows/daily-nudge.yml\ncron 23:00 IST\nscripts/send-nudge.js\nFCM multicast push"]
-    end
+---
 
-    App --> FlagCtx & AuthCtx & ExpCtx
-    App --> PublicPages & ProtectedPages & messagingJs
-    Dash & Analytics --> FlagCtx
-    Add & Edit --> useCategories["useCategories.js"]
-    Expenses --> useFilteredExp["useFilteredExpenses.js"]
-    Settings --> dbJs & messagingJs
-    Admin --> adminJs
-    AuthCtx & ExpCtx --> dbJs
-    authJs & dbJs & adminJs & messagingJs --> configJs
-    nudge --> dbJs
+## Step 3 — Create Firestore Database
+
+1. In the sidebar, click **"Build"** → **"Firestore Database"**
+2. Click **"Create database"**
+3. Choose **"Start in test mode"** (we'll add proper rules later)
+4. Select a location closest to India — choose **`asia-south1` (Mumbai)** → Click **"Enable"**
+5. Wait for the database to be provisioned
+
+---
+
+## Step 4 — Get Firebase Config Keys
+
+1. In the Firebase Console, click the ⚙️ gear icon → **"Project settings"**
+2. Scroll down to **"Your apps"** section
+3. Click the **"</>"** (Web) icon to add a web app
+4. Enter app nickname: `karcha-web` → Click **"Register app"**
+5. You'll see a config object like this — **copy all the values**:
+
+```js
+const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "karcha-xxxxx.firebaseapp.com",
+  projectId: "karcha-xxxxx",
+  storageBucket: "karcha-xxxxx.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef123456"
+};
 ```
+
+---
+
+## Step 5 — Clone & Install
+
+```bash
+# Clone the repo
+git clone https://github.com/aguywithnojob/domanga.git
+cd domanga
+
+# Install dependencies
+npm install
+```
+
+---
+
+## Step 6 — Configure Environment Variables
+
+1. Copy the example env file:
+
+```bash
+cp .env.example .env.local
+```
+
+2. Open `.env.local` and fill in your Firebase config values:
+
+```env
+VITE_FIREBASE_API_KEY=AIza...
+VITE_FIREBASE_AUTH_DOMAIN=karcha-xxxxx.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=karcha-xxxxx
+VITE_FIREBASE_STORAGE_BUCKET=karcha-xxxxx.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abcdef123456
+```
+
+> `.env.local` is gitignored — your keys will never be committed to GitHub.
+
+---
+
+## Step 7 — Run Locally
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+**Note:** Phone OTP requires `localhost` to be an authorized domain. It is automatically allowed by Firebase for local development.
+
+---
+
+## Step 8 — Deploy to GitHub Pages
+
+1. Make sure your GitHub repo is named `domanga` and `main` branch exists
+2. Run:
+
+```bash
+npm run deploy
+```
+
+This command:
+- Builds the app with `vite build`
+- Pushes the `/dist` folder to the `gh-pages` branch
+- GitHub Pages serves it from `https://aguywithnojob.github.io/domanga/`
+
+3. In your GitHub repo → **Settings** → **Pages**:
+   - Source: **Deploy from a branch**
+   - Branch: **gh-pages** → **/ (root)**
+   - Click **Save**
+
+Your app will be live in 1-2 minutes.
+
+---
+
+## Step 9 — Add GitHub Pages Domain to Firebase
+
+After deploying, you must whitelist your GitHub Pages URL in Firebase Auth:
+
+1. Go to Firebase Console → **Authentication** → **Settings** tab
+2. Under **"Authorized domains"**, click **"Add domain"**
+3. Add: `aguywithnojob.github.io`
+4. Click **"Add"**
+
+Without this step, phone OTP will fail on the live site.
+
+---
+
+## How Couple Linking Works
+
+1. **Person A** signs in with their phone number → completes profile setup
+2. Person A gets a **6-digit couple invite code** (shown in Settings)
+3. **Person B** signs in → on Profile Setup screen, enters Person A's invite code
+4. Both are now linked under the same `coupleId`
+5. All expenses added by either person are visible to both
+
+> If you want to unlink and re-link, use the Settings screen.
 
 ---
 
@@ -132,124 +208,46 @@ flowchart TD
 ```
 domanga/
 ├── public/
-│   ├── favicon.svg
-│   ├── icon-192.png              # PWA icon
-│   └── icon-512.png              # PWA icon
-│
-├── scripts/
-│   └── send-nudge.js             # Daily push via firebase-admin (runs in GitHub Actions)
-│
-├── .github/
-│   └── workflows/
-│       └── daily-nudge.yml       # Cron: 23:00 IST — sends FCM nudge to all opted-in devices
-│
 ├── src/
-│   ├── main.jsx                  # Entry point + PWA service worker registration
-│   ├── sw.js                     # Custom service worker: Workbox precache + FCM background handler
-│   ├── App.jsx                   # Root router + foreground FCM toast overlay
-│   ├── index.css
-│   │
-│   ├── components/common/
-│   │   ├── BottomNav.jsx
-│   │   ├── Header.jsx
-│   │   ├── PageLoader.jsx
-│   │   ├── RequireAuth.jsx
-│   │   └── Spinner.jsx
-│   │
+│   ├── components/
+│   │   ├── auth/              # PhoneLogin, OTPVerify, ProfileSetup
+│   │   ├── dashboard/         # Dashboard, SummaryCard, RecentExpenses
+│   │   ├── expenses/          # AddExpense, ExpenseList, ExpenseItem
+│   │   ├── analytics/         # Analytics, CategoryChart, PersonChart
+│   │   └── common/            # BottomNav, Header, Spinner, Modal
 │   ├── contexts/
-│   │   ├── AuthContext.jsx       # userProfile + partnerProfile (fetched by partnerId)
-│   │   ├── ExpenseContext.jsx
-│   │   └── FeatureFlagContext.jsx
-│   │
+│   │   ├── AuthContext.jsx    # Firebase auth state
+│   │   └── ExpenseContext.jsx # Firestore expense CRUD
 │   ├── firebase/
-│   │   ├── config.js             # Firebase app init — exports app, auth, db
-│   │   ├── auth.js               # sendOTP + verifyOTP (with rate limiting)
-│   │   ├── db.js                 # Firestore helpers: users, couples, expenses, budget, OTP
-│   │   ├── admin.js              # Feature flag + category helpers
-│   │   └── messaging.js          # subscribePush (saves FCM token), onForegroundMessage
-│   │
+│   │   ├── config.js          # Firebase app initialization
+│   │   ├── auth.js            # Phone auth helpers
+│   │   └── db.js              # Firestore helpers
 │   ├── hooks/
-│   │   ├── useCategories.js      # Merges static + Firestore custom; filters disabled
-│   │   └── useFilteredExpenses.js
-│   │
+│   │   ├── useExpenses.js     # Expense fetch + filter logic
+│   │   └── useCouple.js       # Couple link/unlink logic
 │   ├── pages/
 │   │   ├── LoginPage.jsx
 │   │   ├── OTPPage.jsx
 │   │   ├── ProfileSetupPage.jsx
 │   │   ├── DashboardPage.jsx
 │   │   ├── AddExpensePage.jsx
-│   │   ├── EditExpensePage.jsx
 │   │   ├── ExpensesPage.jsx
 │   │   ├── AnalyticsPage.jsx
-│   │   ├── SettingsPage.jsx
-│   │   └── AdminPage.jsx
-│   │
-│   └── utils/
-│       ├── categories.js         # 15 built-in categories with emoji + colour tokens
-│       └── formatUtils.js        # ₹ INR formatter, date helpers
-│
+│   │   └── SettingsPage.jsx
+│   ├── utils/
+│   │   ├── dateUtils.js       # Date range helpers
+│   │   └── formatUtils.js     # Currency (₹) formatting
+│   ├── App.jsx
+│   └── main.jsx
+├── .env.example
+├── .env.local                 # Your keys — never committed
 ├── firestore.rules
-├── .env.example                  # Template for environment variables
 ├── index.html
 ├── tailwind.config.js
-├── vite.config.js                # Vite + VitePWA (injectManifest strategy)
+├── vite.config.js
 ├── package.json
 └── README.md
 ```
-
----
-
-## Step 1 — Clone & Install
-
-```bash
-git clone https://github.com/aguywithnojob/domanga.git
-cd domanga
-npm install
-```
-
-Create your local env file:
-
-```bash
-cp .env.example .env.local
-```
-
-Fill in `.env.local` with the Firebase config values from **Firebase Console → Project Settings → Your apps**.
-
----
-
-## Step 2 — Run Locally
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
----
-
-## Step 3 — Enable Push Notifications
-
-### A. VAPID key
-
-1. Firebase Console → **Project Settings → Cloud Messaging**
-2. Scroll to **"Web configuration"** → **"Generate key pair"**
-3. Copy the key → add to `.env.local`:
-   ```env
-   VITE_FIREBASE_VAPID_KEY=your_vapid_key_here
-   ```
-4. Redeploy: `npm run deploy`
-
-### B. GitHub Actions secret (daily 11 PM nudge)
-
-1. Firebase Console → **Project Settings → Service accounts → Generate new private key** → download JSON
-2. GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**
-   - Name: `FIREBASE_SERVICE_ACCOUNT`
-   - Value: paste the full content of the downloaded JSON
-3. Click **"Add secret"**
-
-The workflow runs daily at **23:00 IST** and sends an FCM push to every opted-in device.
-
-> **Platform support:** Android and Chrome desktop. iOS requires 16.4+ with the PWA installed.
 
 ---
 
