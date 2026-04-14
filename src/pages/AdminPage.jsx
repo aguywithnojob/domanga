@@ -1,10 +1,31 @@
 import { useState, useEffect } from 'react'
 import { onSnapshot, doc } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { setFeatureFlag, getAdminCategories, saveAdminCategories, verifyAdminCredentials } from '../firebase/admin'
+import { setFeatureFlag, getAdminCategories, saveAdminCategories, verifyAdminCredentials, getKeywordRules, saveKeywordRules } from '../firebase/admin'
 import { CATEGORIES } from '../utils/categories'
 import Header from '../components/common/Header'
 import Spinner from '../components/common/Spinner'
+
+// ── Collapsible Section ───────────────────────────────────────────────────────
+function Section({ title, subtitle, icon, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="bg-white rounded-xl shadow-card overflow-hidden">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50"
+      >
+        <span className="text-xl flex-shrink-0">{icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-karcha-text">{title}</p>
+          {subtitle && <p className="text-[11px] text-karcha-muted mt-0.5">{subtitle}</p>}
+        </div>
+        <span className={`text-karcha-muted text-lg transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}>⌄</span>
+      </button>
+      {open && <div className="border-t border-karcha-border px-4 pb-4 pt-3">{children}</div>}
+    </div>
+  )
+}
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
 function Toggle({ on, onChange, disabled }) {
@@ -89,7 +110,7 @@ function AdminLogin({ onSuccess }) {
 
 // ── Admin Panel ───────────────────────────────────────────────────────────────
 function AdminPanel() {
-  // Feature flags
+  // ─ Feature flags ─
   const [flags, setFlags]           = useState({})
   const [newFlagName, setNewFlagName] = useState('')
   const [flagSaving, setFlagSaving]   = useState(false)
@@ -116,7 +137,7 @@ function AdminPanel() {
     setNewFlagName('')
   }
 
-  // Categories
+  // ─ Categories ─
   const [catConfig, setCatConfig]   = useState({ disabled: [], custom: [] })
   const [catLoading, setCatLoading] = useState(true)
   const [newEmoji, setNewEmoji]     = useState('')
@@ -158,6 +179,35 @@ function AdminPanel() {
     setNewLabel('')
   }
 
+  // ─ Keyword rules ─
+  const [kwRules, setKwRules]       = useState(null)   // null = loading
+  const [kwKeyword, setKwKeyword]   = useState('')
+  const [kwCatId, setKwCatId]       = useState('food')
+  const [kwSaving, setKwSaving]     = useState(false)
+
+  useEffect(() => {
+    getKeywordRules().then(setKwRules).catch(() => setKwRules([]))
+  }, [])
+
+  async function persistKw(next) {
+    setKwRules(next)
+    setKwSaving(true)
+    try { await saveKeywordRules(next) }
+    finally { setKwSaving(false) }
+  }
+
+  async function addKeyword() {
+    const keyword = kwKeyword.trim().toLowerCase()
+    if (!keyword || !kwCatId) return
+    if (kwRules.some(r => r.keyword === keyword)) return
+    await persistKw([...kwRules, { keyword, categoryId: kwCatId }])
+    setKwKeyword('')
+  }
+
+  async function deleteKeyword(keyword) {
+    await persistKw(kwRules.filter(r => r.keyword !== keyword))
+  }
+
   const flagEntries   = Object.entries(flags)
   const allCategories = [
     ...CATEGORIES.map(c => ({ ...c, isStatic: true })),
@@ -168,33 +218,24 @@ function AdminPanel() {
     <div className="min-h-screen bg-karcha-bg pb-10">
       <Header title="Admin ⚙️" backTo="/settings" />
 
-      <div className="px-4 mt-4 space-y-5">
+      <div className="px-4 mt-4 space-y-3">
 
         {/* ── Feature Flags ── */}
-        <div className="bg-white rounded-xl shadow-card p-4">
-          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-0.5">Feature Flags</p>
-          <p className="text-xs text-karcha-muted mb-4">Toggle features on/off without redeploying.</p>
-
+        <Section icon="🚩" title="Feature Flags" subtitle="Toggle features without redeploying" defaultOpen>
           {flagEntries.length === 0 && (
             <p className="text-sm text-karcha-muted italic mb-4">No flags yet.</p>
           )}
-
           <div className="space-y-2 mb-4">
             {flagEntries.map(([name, value]) => (
-              <div key={name} className="flex items-center gap-2 py-1 overflow-hidden">
-                {/* Text — min-w-0 + overflow-hidden ensures it never pushes the toggle off */}
-                <div className="flex-1 min-w-0 overflow-hidden">
+              <div key={name} className="flex items-center gap-2 py-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-karcha-text truncate">{name}</p>
-                  <p className="text-[10px] text-karcha-muted truncate">
-                    {typeof value === 'boolean' ? (value ? 'Enabled' : 'Disabled') : String(value)}
-                  </p>
+                  <p className="text-[10px] text-karcha-muted">{typeof value === 'boolean' ? (value ? 'Enabled' : 'Disabled') : String(value)}</p>
                 </div>
                 <Toggle on={!!value} onChange={() => toggleFlag(name, !!value)} disabled={flagSaving} />
               </div>
             ))}
           </div>
-
-          {/* Add flag — stacked on narrow screens */}
           <div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
             <input
               type="text"
@@ -204,20 +245,14 @@ function AdminPanel() {
               onKeyDown={e => e.key === 'Enter' && addFlag()}
               className="w-full border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500"
             />
-            <button
-              onClick={addFlag}
-              className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform"
-            >
+            <button onClick={addFlag} className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform">
               + Add Flag
             </button>
           </div>
-        </div>
+        </Section>
 
         {/* ── Categories ── */}
-        <div className="bg-white rounded-xl shadow-card p-4">
-          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-0.5">Categories</p>
-          <p className="text-xs text-karcha-muted mb-4">Enable/disable categories in the expense picker.</p>
-
+        <Section icon="🏷️" title="Categories" subtitle="Enable/disable & add custom categories">
           {catLoading ? (
             <div className="flex justify-center py-4"><Spinner /></div>
           ) : (
@@ -225,35 +260,16 @@ function AdminPanel() {
               {allCategories.map(cat => {
                 const isDisabled = catConfig.disabled.includes(cat.id)
                 return (
-                  <div
-                    key={cat.id}
-                    className={`flex items-center gap-2 py-2.5 border-b border-gray-50 last:border-0 transition-opacity ${isDisabled ? 'opacity-40' : ''}`}
-                  >
-                    {/* Emoji */}
+                  <div key={cat.id} className={`flex items-center gap-2 py-2.5 border-b border-gray-50 last:border-0 transition-opacity ${isDisabled ? 'opacity-40' : ''}`}>
                     <span className="text-xl w-7 text-center flex-shrink-0">{cat.emoji}</span>
-
-                    {/* Label — flex-1 min-w-0 clips long names */}
-                    <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-karcha-text truncate">{cat.label}</p>
-                      {!cat.isStatic && (
-                        <p className="text-[10px] text-primary-500 font-semibold">Custom</p>
-                      )}
+                      {!cat.isStatic && <p className="text-[10px] text-primary-500 font-semibold">Custom</p>}
                     </div>
-
-                    {/* Controls — flex-shrink-0 so they never collapse */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <Toggle
-                        on={!isDisabled}
-                        onChange={() => toggleCategory(cat.id, isDisabled)}
-                        disabled={catSaving}
-                      />
+                      <Toggle on={!isDisabled} onChange={() => toggleCategory(cat.id, isDisabled)} disabled={catSaving} />
                       {!cat.isStatic && (
-                        <button
-                          onClick={() => deleteCustomCategory(cat.id)}
-                          className="text-red-400 text-lg font-bold w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50"
-                        >
-                          ×
-                        </button>
+                        <button onClick={() => deleteCustomCategory(cat.id)} className="text-red-400 text-lg font-bold w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50">×</button>
                       )}
                     </div>
                   </div>
@@ -261,39 +277,72 @@ function AdminPanel() {
               })}
             </div>
           )}
-
-          {/* Add custom category — stacked for narrow screens */}
-          <p className="text-[10px] font-semibold text-karcha-muted uppercase tracking-widest mt-2 mb-2">
-            Add Custom Category
-          </p>
+          <p className="text-[10px] font-semibold text-karcha-muted uppercase tracking-widest mb-2">Add Custom Category</p>
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="🎁"
-                value={newEmoji}
-                onChange={e => setNewEmoji(e.target.value)}
-                maxLength={2}
-                className="w-12 flex-shrink-0 border border-karcha-border rounded-lg px-1 py-2 text-lg text-center outline-none focus:border-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Category name"
-                value={newLabel}
-                onChange={e => setNewLabel(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addCustomCategory()}
-                className="flex-1 min-w-0 border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500"
-              />
+              <input type="text" placeholder="🎁" value={newEmoji} onChange={e => setNewEmoji(e.target.value)} maxLength={2}
+                className="w-12 flex-shrink-0 border border-karcha-border rounded-lg px-1 py-2 text-lg text-center outline-none focus:border-primary-500" />
+              <input type="text" placeholder="Category name" value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCustomCategory()}
+                className="flex-1 min-w-0 border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500" />
             </div>
-            <button
-              onClick={addCustomCategory}
-              disabled={catSaving}
-              className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60"
-            >
+            <button onClick={addCustomCategory} disabled={catSaving} className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60">
               + Add Category
             </button>
           </div>
-        </div>
+        </Section>
+
+        {/* ── Keyword Rules (Scan) ── */}
+        <Section icon="🔍" title="Scan Keyword Rules" subtitle="Auto-detect categories from OCR text">
+          {kwRules === null ? (
+            <div className="flex justify-center py-4"><Spinner /></div>
+          ) : (
+            <>
+              {kwRules.length === 0 ? (
+                <p className="text-sm text-karcha-muted italic mb-4">No custom rules yet. Default mappings are built-in.</p>
+              ) : (
+                <div className="space-y-1 mb-4">
+                  {kwRules.map(rule => {
+                    const cat = allCategories.find(c => c.id === rule.categoryId)
+                    return (
+                      <div key={rule.keyword} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0">
+                        <span className="text-xl flex-shrink-0">{cat?.emoji ?? '📦'}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-karcha-text truncate">{rule.keyword}</p>
+                          <p className="text-[10px] text-karcha-muted">{cat?.label ?? rule.categoryId}</p>
+                        </div>
+                        <button onClick={() => deleteKeyword(rule.keyword)} disabled={kwSaving} className="text-red-400 text-lg font-bold w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 flex-shrink-0 disabled:opacity-40">×</button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <p className="text-[10px] font-semibold text-karcha-muted uppercase tracking-widest mb-2">Add Keyword Rule</p>
+              <p className="text-xs text-karcha-muted mb-3">Custom rules override built-in defaults.</p>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="text"
+                  placeholder="Merchant name (e.g. zomato)"
+                  value={kwKeyword}
+                  onChange={e => setKwKeyword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addKeyword()}
+                  className="w-full border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500"
+                />
+                <select
+                  value={kwCatId}
+                  onChange={e => setKwCatId(e.target.value)}
+                  className="w-full border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500 bg-white"
+                >
+                  {allCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
+                  ))}
+                </select>
+                <button onClick={addKeyword} disabled={kwSaving || !kwKeyword.trim()} className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60">
+                  + Add Rule
+                </button>
+              </div>
+            </>
+          )}
+        </Section>
 
       </div>
     </div>

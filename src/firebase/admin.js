@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { db } from './config'
 
 // ─── Feature Flags ───────────────────────────────────────────────────────────
@@ -23,9 +23,20 @@ export async function saveAdminCategories(data) {
   await setDoc(doc(db, 'config', 'categories'), data)
 }
 
-// ─── Admin Auth ──────────────────────────────────────────────────────────────
-// Credentials stored at config/adminAuth as { username, passwordHash (SHA-256 hex) }
+// ─── Keyword Table (merchant → category mappings) ────────────────────────────
+// Stored at config/keywords as { rules: [{ id, keyword, categoryId }] }
 
+export async function getKeywordRules() {
+  const snap = await getDoc(doc(db, 'config', 'keywords'))
+  if (!snap.exists()) return []
+  return snap.data().rules ?? []
+}
+
+export async function saveKeywordRules(rules) {
+  await setDoc(doc(db, 'config', 'keywords'), { rules })
+}
+
+// ─── Admin Auth ──────────────────────────────────────────────────────────────
 async function sha256hex(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
@@ -38,3 +49,4 @@ export async function verifyAdminCredentials(username, password) {
   const hash = await sha256hex(password)
   return username === storedUser && hash === passwordHash
 }
+

@@ -240,6 +240,23 @@ export default function SettingsPage() {
           </Link>
         )}
 
+        {/* Scan — only when enablescan flag is on */}
+        {flags.enablescan && (
+          <Link
+            to="/scan"
+            className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-card"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">📷</span>
+              <div>
+                <p className="text-sm font-semibold text-karcha-text">Scan Receipt</p>
+                <p className="text-[11px] text-karcha-muted">Bulk-add from a screenshot</p>
+              </div>
+            </div>
+            <span className="text-karcha-muted text-sm">›</span>
+          </Link>
+        )}
+
         {/* Admin */}
         <Link
           to="/admin"

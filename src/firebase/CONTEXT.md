@@ -74,9 +74,11 @@
 ---
 
 ## `admin.js`
-- **Exports:** `getFeatureFlags()`, `setFeatureFlag(name, value)`, `getAdminCategories()`, `saveAdminCategories(data)`, `verifyAdminCredentials(username, password)`
-- **Firestore read:** `config/features`, `config/categories`, `config/adminAuth`
-- **Firestore write:** `config/features`, `config/categories`
+- **Exports:** `getFeatureFlags()`, `setFeatureFlag(name, value)`, `getAdminCategories()`, `saveAdminCategories(data)`, `verifyAdminCredentials(username, password)`, `getKeywordRules()`, `saveKeywordRules(rules)`
+- **Firestore read:** `config/features`, `config/categories`, `config/adminAuth`, `config/keywords`
+- **Firestore write:** `config/features`, `config/categories`, `config/keywords`
+- **`getKeywordRules()`:** Reads `config/keywords.rules[]` → returns `Array<{keyword, categoryId}>`; returns `[]` if doc missing
+- **`saveKeywordRules(rules)`:** Writes `{ rules }` to `config/keywords`
 - **Auth method:** SHA-256 hash via `crypto.subtle` — compares against `config/adminAuth.passwordHash`
 - **Admin credentials:** `Admin` / `Admin` (SHA-256 stored in Firestore)
 
@@ -98,6 +100,7 @@
 | `couples/{coupleId}` | `db.js` | `ExpenseContext`, `SettingsPage` |
 | `expenses/{id}` | `db.js` | `ExpenseContext` |
 | `otpLimits/{phone}` | `db.js` | `auth.js` |
+| `config/keywords` | `admin.js` | `ScanPage` (via `getKeywordRules`); `AdminPage` (CRUD) |
 | `config/features` | `admin.js` | `FeatureFlagContext` |
 | `config/categories` | `admin.js` | `useCategories` hook |
 | `config/adminAuth` | (set manually) | `admin.js` |

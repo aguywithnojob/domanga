@@ -32,7 +32,8 @@
 - **Budgets** — monthly budget with progress bar; per-category limits with over-budget alerts
 - **Real-time + Offline** — both screens sync instantly; expenses queue offline and auto-sync on reconnect
 - **PWA** — installable on iOS & Android; push notifications with in-app inbox
-- **Admin panel** — manage feature flags and custom categories without redeploying
+- **Scan (flag-gated)** — upload a bank/UPI screenshot; Tesseract.js reads it offline and pre-fills a bulk-add review screen with editable amount, category, date per transaction
+- **Admin panel** — collapsible sections for feature flags, custom categories, and OCR keyword rules (merchant → category mappings) — all without redeploying
 - Serverless — Firebase handles auth & database; hosted free on GitHub Pages
 
 ---

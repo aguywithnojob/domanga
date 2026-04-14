@@ -114,14 +114,27 @@
 
 ### `AdminPage.jsx`
 - **Route:** `/admin`
-- **Purpose:** Admin-only panel — feature flags + category management
+- **Purpose:** Admin-only panel — feature flags, categories, scan keyword rules
 - **Auth gate:** `sessionStorage.adminAuthed` (set after SHA-256 password verify)
-- **Sub-components:** `AdminLogin` (login gate), `AdminPanel` (main panel)
-- **Firestore read:** `config/features`, `config/categories`, `config/adminAuth`
-- **Firestore write:** `config/features`, `config/categories`
-- **Features:** Toggle feature flags, enable/disable categories, add/delete custom categories.
+- **Sub-components:** `AdminLogin` (login gate), `Section` (collapsible accordion), `AdminPanel` (main panel)
+- **Firestore read:** `config/features`, `config/categories`, `config/keywords`, `config/adminAuth`
+- **Firestore write:** `config/features`, `config/categories`, `config/keywords`
+- **Sections (collapsible):**
+  - 🚩 Feature Flags — toggle/add flags
+  - 🏷️ Categories — enable/disable/add custom
+  - 🔍 Scan Keyword Rules — CRUD for OCR merchant→category mappings (overrides built-in defaults)
 - **Admin credentials:** Username `Admin`, password `Admin` (SHA-256 stored in Firestore `config/adminAuth`).
 - **Toggle bug fix:** Knob uses `left-[22px]`/`left-0.5` CSS positioning (not `translate`) for mobile WebKit reliability.
+
+### `ScanPage.jsx`
+- **Route:** `/scan`
+- **Purpose:** OCR scan of transaction screenshots → review → bulk add expenses
+- **Feature flag:** Renders locked screen if `enablescan` is `false`
+- **Flow:** Upload image → Tesseract.js OCR (browser, offline) → `parseOCRText()` → review list → `addNew()` for each selected item
+- **Key state:** `step` (0=upload 1=scanning 2=review 3=done), `items[]`, `progress`, `saving`
+- **Sub-components:** `StepBar`, `ReviewRow` (inline edit: amount, date, category, note; toggle skip)
+- **Consumes:** `useExpenses()`, `useFlags()`, `getKeywordRules()`, `parseOCRText()`, `getCategoryMeta()`
+- **Notes:** Fully offline OCR — no API key or server. Keyword rules fetched from Firestore for custom matching. Each item is independently editable and skippable before saving.
 
 ### `NotificationsPage.jsx`
 - **Route:** `/notifications`
