@@ -22,7 +22,7 @@ import CategoryBudgetPage from './pages/CategoryBudgetPage'
 function ThemeApplier() {
   const { enabletheme } = useFlags()
   useEffect(() => {
-    const primaryColor = enabletheme ? '#2563eb' : '#16a34a'
+    const primaryColor = enabletheme ? '#2563eb' : '#d97706'
     if (enabletheme) {
       document.documentElement.setAttribute('data-theme', 'blue')
     } else {
