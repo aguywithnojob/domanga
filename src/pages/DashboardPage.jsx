@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
 import { useThemeColors } from '../contexts/FeatureFlagContext'
@@ -8,6 +8,7 @@ import { getCategoryMeta } from '../utils/categories'
 import { isWithinInterval, startOfDay, endOfDay, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
 import Spinner from '../components/common/Spinner'
 import BottomNav from '../components/common/BottomNav'
+import ExpenseDetailSheet from '../components/common/ExpenseDetailSheet'
 
 function Sparkline({ weeks }) {
   const max = Math.max(...weeks.map(w => w.total), 1)
@@ -31,13 +32,16 @@ function Sparkline({ weeks }) {
 }
 
 export default function DashboardPage() {
-  const { userProfile, partnerProfile } = useAuth()
-  const { expenses, budget, loading } = useExpenses()
+  const navigate = useNavigate()
+  const { firebaseUser, userProfile, partnerProfile } = useAuth()
+  const { expenses, budget, loading, remove } = useExpenses()
   const { primary: primaryColor } = useThemeColors()
   const partnerName = partnerProfile?.displayName || 'Partner'
   const [tab, setTab] = useState('all')
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [newExpenseIds, setNewExpenseIds] = useState(new Set())
+  const [selected, setSelected] = useState(null)
+  const [deleting, setDeleting] = useState(null)
   const prevIdsRef = useRef(null)
 
   // Track newly-arrived expenses to flash them
@@ -84,7 +88,7 @@ export default function DashboardPage() {
     ), [expenses, from, to])
 
   const totalMonth   = monthExpenses.reduce((s, e) => s + e.amount, 0)
-  const mySpend      = monthExpenses.filter(e => e.paidBy === userProfile?.id).reduce((s, e) => s + e.amount, 0)
+  const mySpend      = monthExpenses.filter(e => e.paidBy === firebaseUser?.uid).reduce((s, e) => s + e.amount, 0)
   const partnerSpend = totalMonth - mySpend
 
   const budgetPct  = budget ? Math.min((totalMonth / budget) * 100, 100) : null
@@ -120,9 +124,16 @@ export default function DashboardPage() {
   }, [expenses])
 
   const recentAll     = expenses.slice(0, 6)
-  const recentMe      = expenses.filter(e => e.paidBy === userProfile?.id).slice(0, 6)
-  const recentPartner = expenses.filter(e => e.paidBy !== userProfile?.id).slice(0, 6)
+  const recentMe      = expenses.filter(e => e.paidBy === firebaseUser?.uid).slice(0, 6)
+  const recentPartner = expenses.filter(e => e.paidBy !== firebaseUser?.uid).slice(0, 6)
   const recent = tab === 'all' ? recentAll : tab === 'me' ? recentMe : recentPartner
+
+  async function handleDelete(id) {
+    setDeleting(id)
+    await remove(id)
+    setDeleting(null)
+    setSelected(null)
+  }
 
   return (
     <div className="min-h-screen bg-karcha-bg pb-24">
@@ -226,9 +237,13 @@ export default function DashboardPage() {
           <div className="space-y-1.5 pb-2">
             {recent.map(exp => {
               const meta = getCategoryMeta(exp.category)
-              const isMe = exp.paidBy === userProfile?.id
+              const isMe = exp.paidBy === firebaseUser?.uid
               return (
-                <div key={exp.id} className={`rounded-xl px-4 py-3 flex items-center gap-3 shadow-card ${newExpenseIds.has(exp.id) ? 'animate-flash-green' : 'bg-white'}`}>
+                <button
+                  key={exp.id}
+                  onClick={() => setSelected(exp)}
+                  className={`w-full rounded-xl px-4 py-3 flex items-center gap-3 shadow-card text-left active:scale-[0.98] transition-transform ${newExpenseIds.has(exp.id) ? 'animate-flash-green' : 'bg-white'}`}
+                >
                   <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center text-lg flex-shrink-0">
                     {meta.emoji}
                   </div>
@@ -241,7 +256,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <p className="font-bold text-karcha-text text-sm flex-shrink-0">{formatINR(exp.amount)}</p>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -249,6 +264,18 @@ export default function DashboardPage() {
       </div>
 
       <BottomNav />
+
+      {selected && (
+        <ExpenseDetailSheet
+          exp={selected}
+          isMe={selected.paidBy === firebaseUser?.uid}
+          partnerName={partnerName}
+          onClose={() => setSelected(null)}
+          onEdit={() => { setSelected(null); navigate(`/edit/${selected.id}`) }}
+          onDelete={() => handleDelete(selected.id)}
+          deleting={deleting === selected.id}
+        />
+      )}
     </div>
   )
 }

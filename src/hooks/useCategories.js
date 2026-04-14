@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { onSnapshot, doc } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { CATEGORIES } from '../utils/categories'
+import { CATEGORIES, registerCustomCategories } from '../utils/categories'
 
 /**
  * Returns the merged category list in real-time:
@@ -20,6 +20,7 @@ export function useCategories() {
           return
         }
         const { disabled = [], custom = [] } = snap.data()
+        registerCustomCategories(custom)
         const merged = [
           ...CATEGORIES.filter(c => !disabled.includes(c.id)),
           ...custom,

@@ -24,7 +24,15 @@ export const CATEGORIES = [
 ]
 
 export function getCategoryMeta(id) {
-  return CATEGORIES.find(c => c.id === id) || { id, label: id, emoji: '📦' }
+  return CATEGORIES.find(c => c.id === id)
+    || _customCategories.find(c => c.id === id)
+    || { id, label: id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), emoji: '📦' }
+}
+
+// Module-level cache updated by useCategories() so getCategoryMeta works for custom categories everywhere.
+let _customCategories = []
+export function registerCustomCategories(custom) {
+  _customCategories = custom
 }
 
 export const CATEGORY_COLORS = {

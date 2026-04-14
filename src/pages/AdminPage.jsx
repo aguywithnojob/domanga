@@ -143,6 +143,7 @@ function AdminPanel() {
   const [newEmoji, setNewEmoji]     = useState('')
   const [newLabel, setNewLabel]     = useState('')
   const [catSaving, setCatSaving]   = useState(false)
+  const [catError, setCatError]     = useState('')
 
   useEffect(() => {
     getAdminCategories()
@@ -172,8 +173,19 @@ function AdminPanel() {
     const emoji = newEmoji.trim() || '📦'
     const label = newLabel.trim()
     if (!label) return
-    const id = `custom_${label.toLowerCase().replace(/\s+/g, '_')}`
-    if (catConfig.custom.find(c => c.id === id)) return
+
+    // Duplicate check — case-insensitive, across static + custom
+    const labelLower = label.toLowerCase()
+    const staticDupe  = CATEGORIES.some(c => c.label.toLowerCase() === labelLower)
+    const customDupe  = catConfig.custom.some(c => c.label.toLowerCase() === labelLower)
+    if (staticDupe || customDupe) {
+      setCatError(`"${label}" already exists.`)
+      return
+    }
+
+    // Clean ID — no custom_ prefix
+    const id = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    setCatError('')
     persistCat({ ...catConfig, custom: [...catConfig.custom, { id, label, emoji }] })
     setNewEmoji('')
     setNewLabel('')
@@ -282,9 +294,12 @@ function AdminPanel() {
             <div className="flex gap-2">
               <input type="text" placeholder="🎁" value={newEmoji} onChange={e => setNewEmoji(e.target.value)} maxLength={2}
                 className="w-12 flex-shrink-0 border border-karcha-border rounded-lg px-1 py-2 text-lg text-center outline-none focus:border-primary-500" />
-              <input type="text" placeholder="Category name" value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCustomCategory()}
-                className="flex-1 min-w-0 border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500" />
+              <input type="text" placeholder="Category name" value={newLabel}
+                onChange={e => { setNewLabel(e.target.value); setCatError('') }}
+                onKeyDown={e => e.key === 'Enter' && addCustomCategory()}
+                className={`flex-1 min-w-0 border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500 ${catError ? 'border-red-400' : 'border-karcha-border'}`} />
             </div>
+            {catError && <p className="text-red-500 text-xs">{catError}</p>}
             <button onClick={addCustomCategory} disabled={catSaving} className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60">
               + Add Category
             </button>
