@@ -105,7 +105,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1">
               <p className="font-bold text-karcha-text">{userProfile?.displayName}</p>
-              <p className="text-karcha-muted text-sm">{userProfile?.phone}</p>
+              <p className="text-karcha-muted text-sm">{userProfile?.phone || userProfile?.email || '—'}</p>
             </div>
             <button onClick={handleLogout} className="text-xs font-semibold text-red-400 active:opacity-60">
               Sign out

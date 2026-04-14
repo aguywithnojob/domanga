@@ -11,6 +11,88 @@ import Spinner from '../components/common/Spinner'
 
 const FILTER_PERSON = ['all', 'me', 'partner']
 
+// ─── Expense Detail Bottom Sheet ─────────────────────────────────────────────
+function ExpenseDetailSheet({ exp, isMe, partnerName, onClose, onEdit, onDelete, deleting }) {
+  const meta = getCategoryMeta(exp.category)
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/40 z-40 animate-fade-in"
+        onClick={onClose}
+      />
+      {/* Sheet */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl pb-safe animate-slide-up">
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+        </div>
+
+        {/* Header row */}
+        <div className="flex items-center justify-between px-5 pt-2 pb-4 border-b border-karcha-border">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-2xl">
+              {meta.emoji}
+            </div>
+            <div>
+              <p className="font-bold text-karcha-text text-base">{meta.label}</p>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                isMe ? 'bg-primary-100 text-primary-700' : 'bg-accent-500/10 text-accent-600'
+              }`}>
+                {isMe ? 'You' : partnerName}
+              </span>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-karcha-muted text-lg">
+            ✕
+          </button>
+        </div>
+
+        {/* Details */}
+        <div className="px-5 py-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-karcha-muted text-sm">Amount</p>
+            <p className="text-2xl font-extrabold text-karcha-text">{formatINR(exp.amount)}</p>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-karcha-muted text-sm">Date</p>
+            <p className="font-semibold text-karcha-text text-sm">{formatDate(exp.date)}</p>
+          </div>
+          {exp.description && (
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-karcha-muted text-sm flex-shrink-0">Note</p>
+              <p className="font-semibold text-karcha-text text-sm text-right">{exp.description}</p>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <p className="text-karcha-muted text-sm">Paid by</p>
+            <p className="font-semibold text-karcha-text text-sm">{isMe ? 'You' : partnerName}</p>
+          </div>
+        </div>
+
+        {/* Actions — only for own expenses */}
+        {isMe && (
+          <div className="px-5 pb-6 pt-1 flex gap-3">
+            <button
+              onClick={onEdit}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 border-2 border-primary-500 text-primary-600 font-semibold rounded-2xl text-sm active:scale-95 transition-transform"
+            >
+              ✏️ Edit
+            </button>
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 border-2 border-red-200 text-red-500 font-semibold rounded-2xl text-sm active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {deleting ? <Spinner size="sm" /> : '🗑 Delete'}
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
 export default function ExpensesPage() {
   const { userProfile, partnerProfile } = useAuth()
   const navigate = useNavigate()
@@ -23,8 +105,7 @@ export default function ExpensesPage() {
   const [toDate, setToDate]     = useState(toInputDate(mTo))
   const [catFilter, setCatFilter] = useState('all')
   const [personFilter, setPerson] = useState('all')
-  const [deleting, setDeleting]   = useState(null)
-
+  const [deleting, setDeleting]   = useState(null)  const [selected, setSelected]     = useState(null)
   const filtered = useMemo(() => {
     return expenses.filter(e => {
       const inRange = isWithinInterval(new Date(e.date), {
@@ -45,6 +126,7 @@ export default function ExpensesPage() {
     setDeleting(id)
     await remove(id)
     setDeleting(null)
+    setSelected(null)
   }
 
   return (
@@ -123,7 +205,11 @@ export default function ExpensesPage() {
             const meta = getCategoryMeta(exp.category)
             const isMe = exp.paidBy === userProfile?.id
             return (
-              <div key={exp.id} className="bg-white rounded-2xl px-4 py-3.5 flex items-center gap-3 shadow-card">
+              <button
+                key={exp.id}
+                onClick={() => setSelected(exp)}
+                className="w-full bg-white rounded-2xl px-4 py-3.5 flex items-center gap-3 shadow-card active:scale-[0.98] transition-transform text-left"
+              >
                 <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-xl flex-shrink-0">
                   {meta.emoji}
                 </div>
@@ -135,31 +221,25 @@ export default function ExpensesPage() {
                     {formatDate(exp.date)} · <span className={isMe ? 'text-primary-600 font-semibold' : 'text-accent-500 font-semibold'}>{isMe ? 'You' : partnerName}</span>
                   </p>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <p className="font-bold text-karcha-text text-sm mr-1">{formatINR(exp.amount)}</p>
-                  {isMe && (
-                    <button
-                      onClick={() => navigate(`/edit/${exp.id}`)}
-                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-50 text-karcha-muted hover:text-primary-600 transition-colors"
-                    >
-                      ✏️
-                    </button>
-                  )}
-                  {isMe && (
-                    <button
-                      onClick={() => handleDelete(exp.id)}
-                      disabled={deleting === exp.id}
-                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-karcha-muted hover:text-red-500 transition-colors"
-                    >
-                      {deleting === exp.id ? <Spinner size="sm" /> : '🗑'}
-                    </button>
-                  )}
-                </div>
-              </div>
+                <p className="font-bold text-karcha-text text-sm flex-shrink-0">{formatINR(exp.amount)}</p>
+              </button>
             )
           })
         )}
       </div>
+
+      {/* Expense detail sheet */}
+      {selected && (
+        <ExpenseDetailSheet
+          exp={selected}
+          isMe={selected.paidBy === userProfile?.id}
+          partnerName={partnerName}
+          onClose={() => setSelected(null)}
+          onEdit={() => { setSelected(null); navigate(`/edit/${selected.id}`) }}
+          onDelete={() => handleDelete(selected.id)}
+          deleting={deleting === selected.id}
+        />
+      )}
 
       <BottomNav />
     </div>

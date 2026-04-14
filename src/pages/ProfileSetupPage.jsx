@@ -27,7 +27,8 @@ export default function ProfileSetupPage() {
       if (!existing) {
         await createUser(firebaseUser.uid, {
           displayName: name.trim(),
-          phone: firebaseUser.phoneNumber,
+          phone: firebaseUser.phoneNumber || null,
+          email: firebaseUser.email || null,
         })
       }
       if (mode === 'create') {

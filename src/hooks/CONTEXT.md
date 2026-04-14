@@ -10,12 +10,13 @@
 **Returns:** `categories` — array of `{id, label, emoji}` objects
 
 **Behavior:**
-- Fetches `config/categories` from Firestore (one-time, on mount)
+- **Real-time** — uses `onSnapshot` on `config/categories` Firestore doc
 - Merges: `static CATEGORIES` + `custom[]` from Firestore
 - Filters out IDs in `disabled[]`
-- Falls back to full static list on any Firestore error
+- Falls back to full static list on any Firestore error or permission denial
+- Listener is cleaned up on unmount
 
-**Used by:** AddExpensePage, EditExpensePage
+**Used by:** AddExpensePage, EditExpensePage, CategoryBudgetPage
 
 ---
 

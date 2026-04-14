@@ -54,10 +54,15 @@ export default {
           '0%':   { backgroundColor: 'var(--color-flash-from)' },
           '100%': { backgroundColor: '#ffffff' },
         },
+        'slide-up': {
+          '0%':   { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
       },
       animation: {
         'fade-in':     'fade-in 0.2s ease-out',
         'flash-green': 'flash-green 2s ease-out forwards',
+        'slide-up':    'slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
       },
     },
   },

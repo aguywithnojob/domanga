@@ -54,7 +54,7 @@
 - **Key state:** `amount`, `category`, `description`, `date`, `loading`
 - **Consumes:** `useExpenses()`, `useCategories()`
 - **Firestore write:** `expenses` via `addNew()`
-- **Notes:** Category is native `<select>`. Amount validated > 0. Uses fire-and-forget `addNew()` — navigates to dashboard immediately without waiting for server.
+- **Notes:** Category is native `<select>` powered by `useCategories()` (real-time, includes custom categories). Amount validated > 0. Awaits `addNew()` before navigating to dashboard.
 
 ### `EditExpensePage.jsx`
 - **Route:** `/edit/:id`
@@ -67,11 +67,15 @@
 ### `ExpensesPage.jsx`
 - **Route:** `/expenses`
 - **Purpose:** Filterable expense history list
-- **Key state:** `fromDate`, `toDate`, `catFilter`, `personFilter`, `deleting`
+- **Key state:** `fromDate`, `toDate`, `catFilter`, `personFilter`, `deleting`, `selected` (open sheet)
 - **Consumes:** `useAuth()`, `useExpenses()`
-- **Firestore write:** `expenses` via `remove()` for delete
 - **Filters:** Date range, category, person (all/me/[partnerName])
-- **Notes:** Only owner can edit/delete. Person filter uses `partnerProfile.displayName`.
+- **Detail sheet:** Tapping any row opens `ExpenseDetailSheet` (slide-up bottom sheet)
+  - Shows: category, amount, date, note, paid-by badge
+  - Own expenses: Edit + Delete buttons inside sheet
+  - Partner's expenses: read-only view, no actions
+  - Backdrop tap or ✕ closes sheet
+- **Notes:** Inline edit/delete row buttons removed — actions moved into detail sheet. Person filter uses `partnerProfile.displayName`.
 
 ### `AnalyticsPage.jsx`
 - **Route:** `/analytics`
@@ -100,11 +104,12 @@
 ### `CategoryBudgetPage.jsx`
 - **Route:** `/category-budgets`
 - **Purpose:** Set per-category monthly spend limits
-- **Key state:** `inputs` (map of categoryId → string), `loading`, `saving`, `saved`
-- **Consumes:** `useAuth()`, `useFlags()`
+- **Key state:** `existingBudgets` (from Firestore), `inputs` (map of categoryId → string), `loading`, `saving`, `saved`
+- **Consumes:** `useAuth()`, `useFlags()`, `useCategories()`
 - **Firestore read:** `couples/{coupleId}` via `getCouple` (pre-fills existing values)
 - **Firestore write:** `couples/{coupleId}.categoryBudgets` via `setCategoryBudgets`
 - **Feature flag:** Redirects to `/settings` if `enableBudget` is `false`
+- **Notes:** Uses `useCategories()` (real-time) so custom categories added via Admin panel appear here automatically. Two `useEffect`s — one loads saved budgets, one re-initialises inputs when categories or budgets change.
 - **Access:** Linked from SettingsPage only when `enableBudget` flag is `true`
 
 ### `AdminPage.jsx`

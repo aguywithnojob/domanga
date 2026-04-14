@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useFlags } from '../contexts/FeatureFlagContext'
+import { useCategories } from '../hooks/useCategories'
 import { getCouple, setCategoryBudgets } from '../firebase/db'
-import { CATEGORIES } from '../utils/categories'
 import { parseShorthand, filterAmountInput } from '../utils/formatUtils'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
@@ -13,13 +13,15 @@ export default function CategoryBudgetPage() {
   const { userProfile } = useAuth()
   const flags = useFlags()
   const navigate = useNavigate()
+  const categories = useCategories()
+  const [existingBudgets, setExistingBudgets] = useState({})
   const [inputs, setInputs] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
   const [saved, setSaved]     = useState(false)
 
+  // Load couple's saved budgets once
   useEffect(() => {
-    // Guard — redirect if feature flag is off
     if (flags.enableBudget === false) {
       navigate('/settings', { replace: true })
       return
@@ -27,20 +29,26 @@ export default function CategoryBudgetPage() {
     async function load() {
       if (userProfile?.coupleId) {
         const c = await getCouple(userProfile.coupleId)
-        const existing = c?.categoryBudgets || {}
-        const init = {}
-        CATEGORIES.forEach(cat => { init[cat.id] = existing[cat.id] ? String(existing[cat.id]) : '' })
-        setInputs(init)
+        setExistingBudgets(c?.categoryBudgets || {})
       }
       setLoading(false)
     }
     load()
   }, [userProfile, flags.enableBudget])
 
+  // Re-initialise inputs whenever categories (static + custom) or saved budgets change
+  useEffect(() => {
+    const init = {}
+    categories.forEach(cat => {
+      init[cat.id] = existingBudgets[cat.id] ? String(existingBudgets[cat.id]) : ''
+    })
+    setInputs(init)
+  }, [categories, existingBudgets])
+
   async function handleSave() {
     setSaving(true)
     const budgets = {}
-    CATEGORIES.forEach(cat => {
+    categories.forEach(cat => {
       const v = parseFloat(inputs[cat.id])
       if (v > 0) budgets[cat.id] = v
     })
@@ -68,7 +76,7 @@ export default function CategoryBudgetPage() {
           Set a monthly limit per category. Leave blank to skip tracking for that category.
         </p>
 
-        {CATEGORIES.map(cat => (
+        {categories.map(cat => (
           <div key={cat.id} className="bg-white rounded-xl px-4 py-3 shadow-card flex items-center gap-3">
             <span className="text-xl w-8 text-center flex-shrink-0">{cat.emoji}</span>
             <p className="flex-1 text-sm font-semibold text-karcha-text">{cat.label}</p>
