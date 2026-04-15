@@ -88,7 +88,7 @@ export default function DashboardPage() {
     ), [expenses, from, to])
 
   const totalMonth   = monthExpenses.reduce((s, e) => s + e.amount, 0)
-  const mySpend      = monthExpenses.filter(e => e.paidBy === firebaseUser?.uid).reduce((s, e) => s + e.amount, 0)
+  const mySpend      = monthExpenses.filter(e => e.paidBy === userProfile?.id).reduce((s, e) => s + e.amount, 0)
   const partnerSpend = totalMonth - mySpend
 
   const budgetPct  = budget ? Math.min((totalMonth / budget) * 100, 100) : null
@@ -124,8 +124,8 @@ export default function DashboardPage() {
   }, [expenses])
 
   const recentAll     = expenses.slice(0, 6)
-  const recentMe      = expenses.filter(e => e.paidBy === firebaseUser?.uid).slice(0, 6)
-  const recentPartner = expenses.filter(e => e.paidBy !== firebaseUser?.uid).slice(0, 6)
+  const recentMe      = expenses.filter(e => e.paidBy === userProfile?.id).slice(0, 6)
+  const recentPartner = expenses.filter(e => e.paidBy !== userProfile?.id).slice(0, 6)
   const recent = tab === 'all' ? recentAll : tab === 'me' ? recentMe : recentPartner
 
   async function handleDelete(id) {
@@ -237,7 +237,7 @@ export default function DashboardPage() {
           <div className="space-y-1.5 pb-2">
             {recent.map(exp => {
               const meta = getCategoryMeta(exp.category)
-              const isMe = exp.paidBy === firebaseUser?.uid
+              const isMe = exp.paidBy === userProfile?.id
               return (
                 <button
                   key={exp.id}
@@ -268,7 +268,7 @@ export default function DashboardPage() {
       {selected && (
         <ExpenseDetailSheet
           exp={selected}
-          isMe={selected.paidBy === firebaseUser?.uid}
+          isMe={selected.paidBy === userProfile?.id}
           partnerName={partnerName}
           onClose={() => setSelected(null)}
           onEdit={() => { setSelected(null); navigate(`/edit/${selected.id}`) }}

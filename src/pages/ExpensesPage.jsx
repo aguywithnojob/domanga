@@ -13,7 +13,7 @@ import ExpenseDetailSheet from '../components/common/ExpenseDetailSheet'
 const FILTER_PERSON = ['all', 'me', 'partner']
 
 export default function ExpensesPage() {
-  const { firebaseUser, partnerProfile } = useAuth()
+  const { firebaseUser, userProfile, partnerProfile } = useAuth()
   const navigate = useNavigate()
   const { expenses, loading, remove } = useExpenses()
   const partnerName = partnerProfile?.displayName || 'Partner'
@@ -34,11 +34,11 @@ export default function ExpensesPage() {
       })
       const inCat    = catFilter === 'all' || e.category === catFilter
       const inPerson = personFilter === 'all'
-        || (personFilter === 'me' && e.paidBy === firebaseUser?.uid)
-        || (personFilter === 'partner' && e.paidBy !== firebaseUser?.uid)
+        || (personFilter === 'me' && e.paidBy === userProfile?.id)
+        || (personFilter === 'partner' && e.paidBy !== userProfile?.id)
       return inRange && inCat && inPerson
     })
-  }, [expenses, fromDate, toDate, catFilter, personFilter, firebaseUser])
+  }, [expenses, fromDate, toDate, catFilter, personFilter, userProfile])
 
   const total = filtered.reduce((s, e) => s + e.amount, 0)
 
@@ -151,7 +151,7 @@ export default function ExpensesPage() {
       {selected && (
         <ExpenseDetailSheet
           exp={selected}
-          isMe={selected.paidBy === firebaseUser?.uid}
+          isMe={selected.paidBy === userProfile?.id}
           partnerName={partnerName}
           onClose={() => setSelected(null)}
           onEdit={() => { setSelected(null); navigate(`/edit/${selected.id}`) }}
