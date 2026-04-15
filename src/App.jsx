@@ -19,6 +19,7 @@ import SettingsPage     from './pages/SettingsPage'
 import AdminPage        from './pages/AdminPage'
 import CategoryBudgetPage from './pages/CategoryBudgetPage'
 import ScanPage        from './pages/ScanPage'
+import HaulPage        from './pages/HaulPage'
 
 function ThemeApplier() {
   const { enabletheme } = useFlags()
@@ -85,6 +86,7 @@ function AppRoutes() {
           <Route path="/admin"     element={<AdminPage />} />
           <Route path="/category-budgets" element={<CategoryBudgetPage />} />
           <Route path="/scan"            element={<ScanPage />} />
+          <Route path="/haul"            element={<HaulPage />} />
         </Route>
 
         {/* Fallback */}

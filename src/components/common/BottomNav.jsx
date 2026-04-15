@@ -39,7 +39,7 @@ export default function BottomNav() {
       <NavItem to="/expenses"  emoji="📋" label="Expenses" />
       <FabItem to="/add" emoji="＋" />
       <NavItem to="/analytics" emoji="✨" label="Insights" />
-      <NavItem to="/settings"  emoji="⚙️" label="Settings" />
+      <NavItem to="/haul"      emoji="🛒" label="Haul" />
     </nav>
   )
 }

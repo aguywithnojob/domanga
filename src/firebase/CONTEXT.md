@@ -82,6 +82,14 @@
 - **Auth method:** SHA-256 hash via `crypto.subtle` — compares against `config/adminAuth.passwordHash`
 - **Admin credentials:** `Admin` / `Admin` (SHA-256 stored in Firestore)
 
+### Haul functions (`db.js`)
+| Function | Firestore | Notes |
+|---|---|---|
+| `addHaulItem(coupleId, addedBy, text)` | write `haulItems` | Sets `done: false`, `doneAt: null` |
+| `markHaulDone(id, done)` | update `haulItems/{id}` | Sets `doneAt: Timestamp.now()` when done |
+| `deleteHaulItem(id)` | delete `haulItems/{id}` | |
+| `subscribeHaulItems(coupleId, onChange)` | onSnapshot `haulItems` where coupleId== | Sorts pending first, then done; silently deletes items done >24h; returns unsubscribe fn |
+
 ---
 
 ## `messaging.js`
@@ -104,6 +112,7 @@
 | `config/features` | `admin.js` | `FeatureFlagContext` |
 | `config/categories` | `admin.js` | `useCategories` hook |
 | `config/adminAuth` | (set manually) | `admin.js` |
+| `haulItems/{id}` | `db.js` | `HaulPage` |
 
 ---
 

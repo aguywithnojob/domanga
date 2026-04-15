@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
     const map = {}
     filtered.forEach(e => {
       const meta = getCategoryMeta(e.category)
-      map[e.category] = map[e.category] || { name: meta.label, value: 0, emoji: meta.emoji }
+      map[e.category] = map[e.category] || { id: e.category, name: meta.label, value: 0, emoji: meta.emoji }
       map[e.category].value += e.amount
     })
     return Object.values(map).sort((a, b) => b.value - a.value)
@@ -263,7 +263,7 @@ export default function AnalyticsPage() {
               <h3 className="font-bold text-karcha-text mb-3">Category Breakdown</h3>
               <div className="space-y-3">
                 {categoryData.map((cat) => {
-                  const catId = CATEGORIES.find(c => c.label === cat.name)?.id || 'others'
+                  const catId = cat.id
                   const pct = total > 0 ? (cat.value / total) * 100 : 0
                   const catBudget = flags.enableBudget ? (categoryBudgets?.[catId] ?? null) : null
                   const budgetPct = catBudget ? Math.min((cat.value / catBudget) * 100, 100) : 0

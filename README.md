@@ -30,9 +30,9 @@
 - **Expenses** — add, edit, delete; tap any row for a full detail sheet with actions
 - **Insights** — monthly / weekly / custom range; category breakdown + You vs Partner chart
 - **Budgets** — monthly budget with progress bar; per-category limits with over-budget alerts
+- **Haul** — shared shopping/needs list; mark items picked up, auto-clear after 24h; accessible from BottomNav
 - **Real-time + Offline** — both screens sync instantly; expenses queue offline and auto-sync on reconnect
 - **PWA** — installable on iOS & Android; push notifications with in-app inbox
-- **Scan (flag-gated)** — upload a bank/UPI screenshot; Tesseract.js reads it offline and pre-fills a bulk-add review screen with editable amount, category, date per transaction
 - **Admin panel** — collapsible sections for feature flags, custom categories, and OCR keyword rules (merchant → category mappings) — all without redeploying
 - Serverless — Firebase handles auth & database; hosted free on GitHub Pages
 

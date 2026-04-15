@@ -38,12 +38,12 @@
 ### `DashboardPage.jsx`
 - **Route:** `/dashboard`
 - **Purpose:** Home screen — month total, stats, recent expenses
-- **Key state:** `tab` (all/me/partner), `isOnline`, `newExpenseIds` (Set)
+- **Key state:** `tab` (all/me/partner), `isOnline`, `newExpenseIds` (Set), `selected`, `deleting`
 - **Consumes:** `useAuth()`, `useExpenses()`, `useFlags()`
 - **Displays:**
-  - Header with month total + You/Partner split bar — turns **grey** with wifi-off watermark when offline
+  - Header: greeting + **⚙️ gear button** (top-right, navigates to `/settings`) + month total + You/Partner split bar — turns **grey** with wifi-off watermark when offline
   - 3-col stat grid: Budget chip · **Today** (today's total spend) · Week sparkline
-  - Recent expenses tabbed by All / You / [PartnerName]
+  - Recent expenses tabbed by All / You / [PartnerName] — tapping a row opens `ExpenseDetailSheet`
   - New expense rows flash green → white for 2s when added via `onSnapshot`
 - **Feature flags:** `enableBudget` hides budget chip if `false`
 - **Partner name:** Uses `partnerProfile.displayName` from AuthContext
@@ -97,9 +97,10 @@
 - **Firestore read:** `couples/{coupleId}`
 - **Firestore write:** `couples` (setBudget), `users` (fcmToken via subscribePush)
 - **Feature flags:** `enableBudget` — when `true`, shows Category Budgets link
-- **Notes:** Profile card + inline Sign out, monthly budget input, notification enable, invite code copy, PWA install button, Category Budgets link (flag-gated), Admin link, app version footer.
+- **Notes:** Profile card + inline Sign out, monthly budget input, notification enable, invite code copy, PWA install button, Category Budgets link (flag-gated), Scan link (flag-gated), Admin link, app version footer.
 - **Offline fix:** `subscribePush` called on mount if `Notification.permission === 'granted'` — ensures FCM token saved even if user previously accepted without button tap.
 - **Install prompt:** Captured in `main.jsx` via `window.__installPrompt` before React mounts to avoid missing early `beforeinstallprompt` event.
+- **Access:** Reachable via the ⚙️ gear icon button at the top-right of DashboardPage header (no longer in BottomNav).
 
 ### `CategoryBudgetPage.jsx`
 - **Route:** `/category-budgets`
@@ -142,3 +143,13 @@
 - **Key state:** Managed by `NotifContext` (localStorage-backed)
 - **Features:** Shows last 5 notifications with relative timestamps, "Clear all" button, marks all as read on mount.
 - **Access:** Bell icon (🔔) in Header — red dot appears when unread count > 0.
+
+### `HaulPage.jsx`
+- **Route:** `/haul`
+- **Purpose:** Shared couple shopping/needs list — add items, mark picked up, delete
+- **Key state:** `items[]`, `loading`, `text` (new item input), `adding`
+- **Consumes:** `useAuth()`, `subscribeHaulItems()`, `addHaulItem()`, `markHaulDone()`, `deleteHaulItem()` from `db.js`
+- **Firestore:** `haulItems` collection; real-time via `subscribeHaulItems`
+- **Flow:** Type item → Add → appears in **Need to pick up** section → tap circle to mark done → moves to **Picked up** section with 24h countdown → auto-deleted after 24h
+- **Auto-cleanup:** `subscribeHaulItems` filters and silently deletes items where `done && doneAt` age > 24h on every snapshot
+- **Access:** 🛒 Haul tab in BottomNav (replaced Settings)

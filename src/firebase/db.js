@@ -212,3 +212,54 @@ export async function updateExpense(expenseId, data) {
     date:        Timestamp.fromDate(new Date(data.date)),
   })
 }
+
+// ─── Haul (shopping / needs list) ────────────────────────────────────────────
+// Collection: `haulItems`, fields: { coupleId, addedBy, text, done, doneAt, createdAt }
+
+export async function addHaulItem(coupleId, addedBy, text) {
+  return addDoc(collection(db, 'haulItems'), {
+    coupleId,
+    addedBy,
+    text: text.trim(),
+    done: false,
+    doneAt: null,
+    createdAt: Timestamp.now(),
+  })
+}
+
+export async function markHaulDone(id, done) {
+  await updateDoc(doc(db, 'haulItems', id), {
+    done,
+    doneAt: done ? Timestamp.now() : null,
+  })
+}
+
+export async function deleteHaulItem(id) {
+  await deleteDoc(doc(db, 'haulItems', id))
+}
+
+/** Real-time list. Filters out items done > 24 h ago (and deletes them). */
+export function subscribeHaulItems(coupleId, onChange) {
+  const q = query(collection(db, 'haulItems'), where('coupleId', '==', coupleId))
+  return onSnapshot(q, snap => {
+    const now = Date.now()
+    const EXPIRY = 24 * 60 * 60 * 1000
+    const stale = []
+    const items = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(item => {
+        if (item.done && item.doneAt) {
+          const age = now - (item.doneAt?.toMillis?.() ?? 0)
+          if (age > EXPIRY) { stale.push(item.id); return false }
+        }
+        return true
+      })
+      .sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1
+        return (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+      })
+    // Fire-and-forget cleanup of expired items
+    stale.forEach(id => deleteDoc(doc(db, 'haulItems', id)))
+    onChange(items)
+  })
+}
