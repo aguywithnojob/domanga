@@ -2,8 +2,8 @@ name: Daily Nudge
 
 on:
   schedule:
-    # 23:00 IST = 17:00 UTC 
-    - cron: '00 17 * * *'
+    # 23:00 IST = 18:00 UTC 
+    - cron: '00 18 * * *'
   workflow_dispatch: # allow manual trigger for testing
 
 jobs:
