@@ -12,7 +12,7 @@ export default function EditExpensePage() {
   const { id }   = useParams()
   const navigate = useNavigate()
   const { expenses, edit } = useExpenses()
-  const { userProfile }    = useAuth()
+  const { firebaseUser }   = useAuth()
   const categories         = useCategories()
 
   const expense = expenses.find(e => e.id === id)
@@ -33,7 +33,7 @@ export default function EditExpensePage() {
     }
   }, [expense])
 
-  // Guard: not found or not owner
+  // Guard: not found or still loading
   if (!expense) {
     return (
       <div className="min-h-screen bg-karcha-bg flex flex-col items-center justify-center px-6">
@@ -46,7 +46,7 @@ export default function EditExpensePage() {
     )
   }
 
-  if (expense.paidBy !== userProfile?.id) {
+  if (expense.paidBy !== firebaseUser?.uid) {
     return (
       <div className="min-h-screen bg-karcha-bg flex flex-col items-center justify-center px-6">
         <p className="text-4xl mb-3">🔒</p>

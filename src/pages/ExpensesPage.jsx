@@ -34,11 +34,11 @@ export default function ExpensesPage() {
       })
       const inCat    = catFilter === 'all' || e.category === catFilter
       const inPerson = personFilter === 'all'
-        || (personFilter === 'me' && e.paidBy === userProfile?.id)
-        || (personFilter === 'partner' && e.paidBy !== userProfile?.id)
+        || (personFilter === 'me' && e.paidBy === firebaseUser?.uid)
+        || (personFilter === 'partner' && e.paidBy !== firebaseUser?.uid)
       return inRange && inCat && inPerson
     })
-  }, [expenses, fromDate, toDate, catFilter, personFilter, userProfile])
+  }, [expenses, fromDate, toDate, catFilter, personFilter, firebaseUser])
 
   const total = filtered.reduce((s, e) => s + e.amount, 0)
 
@@ -123,7 +123,7 @@ export default function ExpensesPage() {
         ) : (
           filtered.map(exp => {
             const meta = getCategoryMeta(exp.category)
-            const isMe = exp.paidBy === userProfile?.id
+            const isMe = exp.paidBy === firebaseUser?.uid
             return (
               <button
                 key={exp.id}
@@ -151,7 +151,7 @@ export default function ExpensesPage() {
       {selected && (
         <ExpenseDetailSheet
           exp={selected}
-          isMe={selected.paidBy === userProfile?.id}
+          isMe={selected.paidBy === firebaseUser?.uid}
           partnerName={partnerName}
           onClose={() => setSelected(null)}
           onEdit={() => { setSelected(null); navigate(`/edit/${selected.id}`) }}

@@ -8,11 +8,11 @@ export default function ExpenseDetailSheet({ exp, isMe, partnerName, onClose, on
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 z-40 animate-fade-in"
+        className="fixed inset-0 bg-black/40 z-[60] animate-fade-in"
         onClick={onClose}
       />
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl pb-safe animate-slide-up">
+      <div className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl shadow-2xl pb-safe animate-slide-up">
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />

@@ -20,7 +20,7 @@ import { db } from './config'
 
 export async function getUser(uid) {
   const snap = await getDoc(doc(db, 'users', uid))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  return snap.exists() ? { ...snap.data(), id: snap.id } : null
 }
 
 export async function createUser(uid, data) {
