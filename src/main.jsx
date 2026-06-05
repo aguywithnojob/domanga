@@ -4,7 +4,12 @@ import App from './App.jsx'
 import './index.css'
 import { registerSW } from 'virtual:pwa-register'
 
-registerSW({ immediate: true })
+// Service workers don't work (and crash) inside Capacitor native apps — skip entirely
+const isNative = !!window.Capacitor?.isNativePlatform?.()
+
+if (!isNative) {
+  registerSW({ immediate: true })
+}
 
 // Capture install prompt as early as possible — before React mounts
 window.__installPrompt = null
@@ -19,8 +24,8 @@ window.addEventListener('appinstalled', () => {
 })
 
 // Force SW update check every time the user comes back to the app
-// This ensures a fresh deploy is picked up within seconds, not hours
-if ('serviceWorker' in navigator) {
+// Only in browser — not in native Capacitor app
+if (!isNative && 'serviceWorker' in navigator) {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       navigator.serviceWorker.ready.then(reg => reg.update()).catch(() => {})

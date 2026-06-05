@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/domanga/favicon.svg" />
-    <link rel="apple-touch-icon" href="/domanga/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#2563eb" />
     <meta name="description" content="Karcha — expense analyzer for couples" />
@@ -30,6 +30,11 @@
   </head>
   <body class="bg-karcha-bg font-sans">
     <div id="root"></div>
+    <script>  
+      window.onerror = function(msg, src, line, col, err) {
+        document.body.innerHTML = '<div style="padding:20px;font-family:monospace;background:#fee;color:#900;font-size:13px;word-break:break-all"><b>JS Error:</b><br>' + msg + '<br><br>' + (err && err.stack ? err.stack : src + ':' + line) + '</div>';
+      };
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

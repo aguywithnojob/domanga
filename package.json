@@ -6,12 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:capacitor": "cross-env VITE_BUILD_TARGET=capacitor vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "postdeploy": "node scripts/tag-deploy.js"
+    "postdeploy": "node scripts/tag-deploy.js",
+    "cap:sync": "npm run build:capacitor && npx cap sync android",
+    "cap:open": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "cordova-plugin-sms": "^1.0.0",
     "date-fns": "^3.6.0",
     "firebase": "^10.12.0",
     "react": "^18.3.1",
@@ -21,10 +27,12 @@
     "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
+    "cross-env": "^10.1.0",
     "gh-pages": "^6.1.1",
     "postcss": "^8.4.38",
     "sharp": "^0.34.5",

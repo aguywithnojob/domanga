@@ -5,6 +5,9 @@ import { readFileSync } from 'fs'
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
+// When building for Capacitor (--base=/), use '/' paths; otherwise use GitHub Pages path
+const base = process.env.VITE_BUILD_TARGET === 'capacitor' ? '/' : '/domanga/'
+
 export default defineConfig({
   plugins: [
     react(),
@@ -22,8 +25,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/domanga/',
-        start_url: '/domanga/',
+        scope: base,
+        start_url: base,
         icons: [
           {
             src: 'icon-192.png',
@@ -43,7 +46,7 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/domanga/',
+  base,
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __BUILD_TIME__:  JSON.stringify(new Date().toISOString()),

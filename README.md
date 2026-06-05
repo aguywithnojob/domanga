@@ -258,6 +258,96 @@ All amounts are displayed in **Indian Rupees (₹ INR)**.
 
 ---
 
+## SMS Auto-Ingestion (Android)
+
+Karcha can automatically detect incoming bank transaction SMS and save them as expenses — no manual entry needed.
+
+### How it works
+
+1. The Android app (built via Capacitor) listens for new SMS using `cordova-plugin-sms`
+2. A quick on-device pre-filter checks for an amount (₹/Rs/INR) + transaction keyword
+3. Matching SMS are sent to the `ingestSms` Cloud Function
+4. The function validates, parses, and stores the expense in Firestore under your user
+
+### One-time local setup (before building the APK)
+
+```bash
+# Install Capacitor + SMS plugin
+npm install
+npm install cordova-plugin-sms
+npx cap add android
+
+# Add permissions to android/app/src/main/AndroidManifest.xml:
+# <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+# <uses-permission android:name="android.permission.READ_SMS"/>
+
+# Sync and open in Android Studio (or build via GitHub Actions)
+npm run cap:sync
+```
+
+### Deploy the Cloud Function
+
+```bash
+cd functions
+npm install
+cd ..
+firebase deploy --only functions
+# Copy the deployed URL — looks like:
+# https://asia-south1-YOUR_PROJECT.cloudfunctions.net/ingestSms
+```
+
+### Using the hook in your app
+
+Already wired into `App.jsx` — no changes needed. The hook writes directly to Firestore (no Cloud Function, no extra env vars).
+
+---
+
+## Build Android APK via GitHub Actions
+
+No Android Studio needed. Push to `main` → GitHub builds the APK → download and install on your phone.
+
+### Setup (one-time)
+
+1. Add your Firebase env vars as **GitHub repository secrets**:
+   - Go to your repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+   - Add each of: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_VAPID_KEY`
+
+2. Push your code to `main` — the workflow [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) runs automatically.
+
+### Download the APK
+
+1. Go to your GitHub repo → **Actions** tab
+2. Click the latest **"Build Android APK"** run
+3. Scroll to **Artifacts** → download `karcha-debug-{run_number}`
+4. Extract the `.apk` file and transfer to your phone (WhatsApp / Google Drive / USB)
+
+### Install on your phone
+
+1. Open the `.apk` on your phone
+2. If prompted, enable **"Install from unknown sources"** for your browser/Files app
+3. Tap **Install**
+
+> The APK is a debug build — signed with a debug keystore. Fine for personal use.
+
+---
+
+## API Endpoint Security
+
+The `ingestSms` Cloud Function is protected by multiple layers:
+
+| Layer | What it does |
+|---|---|
+| **Firebase Auth token** | Every request must carry a valid `Bearer <id-token>`. Anonymous or unauthenticated requests get `401`. Tokens expire in 1 hour and are auto-refreshed by the SDK. |
+| **Rate limiting** | Max **30 requests per user per hour**, tracked in Firestore (`smsRateLimits` collection). Returns `429` when exceeded. |
+| **Input validation** | SMS body must be 10–500 chars, contain an amount pattern, and a transaction keyword. Returns `400` otherwise. |
+| **HTTPS only** | Firebase Cloud Functions enforce HTTPS — plain HTTP is rejected. |
+| **No CORS** | `cors: false` — the endpoint is not callable from arbitrary browser origins. |
+
+> For production hardening you can additionally enable [Firebase App Check](https://firebase.google.com/docs/app-check) to bind requests to your specific APK.
+
+---
+
 ## License
 
 MIT
+

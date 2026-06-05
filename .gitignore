@@ -4,6 +4,12 @@ node_modules/
 # build output
 dist/
 
+# Capacitor — generated build outputs (not source)
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+
 # env with secrets
 .env.local
 .env
@@ -15,3 +21,5 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+TODO.txt
+todo.txt

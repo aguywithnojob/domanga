@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ExpenseProvider } from './contexts/ExpenseContext'
 import { FlagProvider, useFlags } from './contexts/FeatureFlagContext'
 import { onForegroundMessage } from './firebase/messaging'
+import { useSmsIngestion } from './hooks/useSmsIngestion'
 import RequireAuth from './components/common/RequireAuth'
 import PageLoader from './components/common/PageLoader'
 
@@ -39,6 +40,12 @@ function ThemeApplier() {
 function AppRoutes() {
   const { firebaseUser, loading } = useAuth()
   const [toast, setToast]     = useState(null)
+
+  useSmsIngestion({
+    uid: firebaseUser?.uid,
+    onExpenseCreated: (expense) => setToast({ title: 'Expense auto-saved 💸', body: `₹${expense.amount} · ${expense.description}` }),
+    onError: (err) => console.error('[SMS]', err),
+  })
 
   useEffect(() => {
     // Only listen for foreground FCM messages if browser supports it
