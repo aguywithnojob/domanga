@@ -38,13 +38,21 @@ function ThemeApplier() {
 }
 
 function AppRoutes() {
-  const { firebaseUser, loading } = useAuth()
+  const { firebaseUser, loading, userProfile } = useAuth()
   const [toast, setToast]     = useState(null)
 
   useSmsIngestion({
-    uid: firebaseUser?.uid,
-    onExpenseCreated: (expense) => setToast({ title: 'Expense auto-saved 💸', body: `₹${expense.amount} · ${expense.description}` }),
-    onError: (err) => console.error('[SMS]', err),
+    uid:      firebaseUser?.uid,
+    coupleId: userProfile?.coupleId,
+    onExpenseCreated: (expense) => {
+      setToast({ title: 'Expense auto-saved', body: expense.notifBody })
+      setTimeout(() => setToast(null), 5000)
+    },
+    onError: (err) => {
+      console.error('[SMS]', err)
+      setToast({ title: 'SMS error', body: err?.message || String(err) })
+      setTimeout(() => setToast(null), 6000)
+    },
   })
 
   useEffect(() => {

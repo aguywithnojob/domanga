@@ -98,10 +98,13 @@ export function parseOCRText(rawText, firestoreRules = []) {
   const results = []
   const today = new Date()
 
-  // Regex to find ₹ amounts — handles ₹450, ₹ 450, Rs.450, Rs 450, INR 450
-  const amountRe = /(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d{1,2})?)/i
-  // Regex to find DD Mon or Mon DD patterns
-  const dateRe = /\b(\d{1,2})\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{1,2})\b/i
+  // Regex to find ₹ amounts — handles ₹450, ₹ 450, Rs.450, Rs 450, Rs. 500, INR 450
+  const amountRe = /(?:₹|rs\.?\s*|inr)\s*([\d,]+(?:\.\d{1,2})?)/i
+  // Regex to find dates:
+  //   DD/MM/YYYY  DD-MM-YYYY  DD/MM/YY  DD-MM-YY  (Indian bank format)
+  //   DD-Mon-YY   DD Mon YYYY  (e.g. 05-Jun-26, 5 Jun 2026)
+  //   Mon DD      DD Mon       (e.g. Jun 5, 14 Apr)
+  const dateRe = /\b(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{2,4})\b|\b(\d{1,2})[\-\s](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\-\s](\d{2,4})\b|\b(\d{1,2})\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{1,2})\b/i
 
   // Group lines into blocks — a block contains an amount
   // Try to extract one transaction per amount found
@@ -135,7 +138,18 @@ export function parseOCRText(rawText, firestoreRules = []) {
     if (dateMatch) {
       try {
         const raw = dateMatch[0]
-        date = new Date(`${raw} ${today.getFullYear()}`)
+        // Try DD/MM/YYYY or DD-MM-YYYY first
+        const numericMatch = raw.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{2,4})$/)
+        if (numericMatch) {
+          let [, dd, mm, yyyy] = numericMatch
+          if (yyyy.length === 2) yyyy = '20' + yyyy
+          date = new Date(`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`)
+        } else {
+          // DD-Mon-YY or DD Mon or Mon DD formats
+          const normalized = raw.replace(/-/g, ' ')
+          const attempt = new Date(`${normalized} ${today.getFullYear()}`)
+          date = isNaN(attempt.getTime()) ? new Date(normalized) : attempt
+        }
         if (isNaN(date.getTime())) date = today
       } catch { date = today }
     }

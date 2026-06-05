@@ -83,8 +83,8 @@ jobs:
       - name: Create GitHub Release with APK
         run: |
           gh release create latest karcha.apk \
-            --title "Karcha Android App (latest)" \
-            --notes "Auto-built from commit ${{ github.sha }}. Download karcha.apk and install on your Android phone." \
+            --title "Karcha " \
+            --notes "commit ${{ github.sha }}. Download karcha.apk and install on your Android phone." \
             --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
