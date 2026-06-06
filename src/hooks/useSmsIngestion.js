@@ -5,6 +5,7 @@ import { collection, addDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { parseOCRText } from '../utils/scanParser'
 import { getCategoryMeta } from '../utils/categories'
+import { writeSmsLog } from '../utils/smsLogger'
 
 // Play a short two-tone chime via Web Audio API (no audio file needed)
 function playChime() {
@@ -47,10 +48,24 @@ function playChime() {
  * @param {function} options.onExpenseCreated Called with the saved expense object
  * @param {function} options.onError          Called with error
  */
-export function useSmsIngestion({ uid, coupleId, onExpenseCreated, onError }) {
-  const isActive = useRef(false)
+export function useSmsIngestion({ uid, coupleId, onExpenseCreated, onError, onReady, onSmsReceived, enablelog }) {
+  // Use refs so callbacks are always fresh inside the effect (avoids stale closures)
+  const onReadyRef        = useRef(onReady)
+  const onSmsReceivedRef  = useRef(onSmsReceived)
+  const onExpenseCreatedRef = useRef(onExpenseCreated)
+  const onErrorRef        = useRef(onError)
+  const enablelogRef      = useRef(enablelog)
+  useEffect(() => { onReadyRef.current = onReady },               [onReady])
+  useEffect(() => { onSmsReceivedRef.current = onSmsReceived },   [onSmsReceived])
+  useEffect(() => { onExpenseCreatedRef.current = onExpenseCreated }, [onExpenseCreated])
+  useEffect(() => { onErrorRef.current = onError },               [onError])
+  useEffect(() => { enablelogRef.current = enablelog },           [enablelog])
 
-  // Pre-filter: only process SMS that look like bank transactions
+  const log = (level, message, meta) => {
+    if (enablelogRef.current) writeSmsLog(uid, level, message, meta)
+  }
+
+  const isActive = useRef(false)
   const looksLikeTransaction = useCallback((body) => {
     const AMOUNT_RE      = /(?:₹|rs\.?\s*|inr)\s*[\d,]+/i
     const TRANSACTION_RE = /\b(debited|credited|debit|credit|paid|payment|spent|charged|transferred)\b/i
@@ -60,7 +75,10 @@ export function useSmsIngestion({ uid, coupleId, onExpenseCreated, onError }) {
   const saveToFirestore = useCallback(async (smsBody) => {
     if (!uid || !coupleId) return   // not linked to a couple yet — skip
     const results = parseOCRText(smsBody)
-    if (!results.length) return
+    if (!results.length) {
+      log('info', 'SMS received but not parsed as expense', { smsBody: smsBody.slice(0, 200) })
+      return
+    }
 
     try {
       const parsed = results[0]
@@ -112,11 +130,13 @@ export function useSmsIngestion({ uid, coupleId, onExpenseCreated, onError }) {
       // Foreground chime
       playChime()
 
-      onExpenseCreated?.({ ...parsed, id: docRef.id, notifBody })
+      onExpenseCreatedRef.current?.({ ...parsed, id: docRef.id, notifBody })
+      log('info', `Expense saved: ${notifBody}`, { amount: parsed.amount, category: parsed.categoryId })
     } catch (err) {
-      onError?.(err)
+      log('error', `Save failed: ${err?.message || String(err)}`)
+      onErrorRef.current?.(err)
     }
-  }, [uid, coupleId, onExpenseCreated, onError])
+  }, [uid, coupleId])
 
   useEffect(() => {
     // Only runs inside the Capacitor native app on Android
@@ -138,15 +158,23 @@ export function useSmsIngestion({ uid, coupleId, onExpenseCreated, onError }) {
     // cordova-plugin-sms exposes window.SMS after the Capacitor/Cordova bridge loads
     const tryStart = () => {
       if (!window.SMS) {
-        onError?.(new Error('[SMS] cordova-plugin-sms not available — window.SMS is undefined'))
+        log('error', 'cordova-plugin-sms not available — window.SMS is undefined')
+        onErrorRef.current?.(new Error('[SMS] cordova-plugin-sms not available — window.SMS is undefined'))
         return
       }
       if (isActive.current) return
 
       // startWatch triggers the Android SMS permission dialog on first call
       window.SMS.startWatch(
-        () => { isActive.current = true },
-        () => onError?.(new Error('[SMS] startWatch failed — SMS permission may have been denied')),
+        () => {
+          isActive.current = true
+          log('info', 'SMS watch started — listening for bank SMS')
+          onReadyRef.current?.()
+        },
+        () => {
+          log('error', 'startWatch failed — SMS permission may have been denied')
+          onErrorRef.current?.(new Error('[SMS] startWatch failed — SMS permission may have been denied'))
+        },
       )
     }
 
@@ -167,9 +195,14 @@ export function useSmsIngestion({ uid, coupleId, onExpenseCreated, onError }) {
 
     const onSmsArrive = (e) => {
       const body = e?.data?.body || e?.data?.message || ''
-      if (body && looksLikeTransaction(body)) {
-        saveToFirestore(body)
-      }
+      if (!body) return
+      const isTransaction = looksLikeTransaction(body)
+      log('info',
+        isTransaction ? `Transaction SMS detected` : `Non-transaction SMS ignored`,
+        { preview: body.slice(0, 120), isTransaction },
+      )
+      onSmsReceivedRef.current?.(body, isTransaction)
+      if (isTransaction) saveToFirestore(body)
     }
 
     document.addEventListener('onSMSArrive', onSmsArrive)

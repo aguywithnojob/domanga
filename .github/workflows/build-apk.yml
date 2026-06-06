@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch: # allow manual trigger from GitHub Actions tab
 
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,9 +23,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       # ── 3. Build web app (base='/' for Capacitor, not GitHub Pages path) ───
@@ -53,6 +64,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
       # ── 7. Make Gradle wrapper executable ───────────────────────────────────
       - name: Make gradlew executable
@@ -60,7 +72,7 @@ jobs:
 
       # ── 8. Build debug APK ───────────────────────────────────────────────────
       - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon
+        run: cd android && ./gradlew assembleDebug --no-daemon --build-cache
 
       # ── 9. Upload APK as downloadable artifact ───────────────────────────────
       - name: Upload APK artifact

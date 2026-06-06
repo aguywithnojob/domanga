@@ -30,11 +30,6 @@
   </head>
   <body class="bg-karcha-bg font-sans">
     <div id="root"></div>
-    <script>  
-      window.onerror = function(msg, src, line, col, err) {
-        document.body.innerHTML = '<div style="padding:20px;font-family:monospace;background:#fee;color:#900;font-size:13px;word-break:break-all"><b>JS Error:</b><br>' + msg + '<br><br>' + (err && err.stack ? err.stack : src + ':' + line) + '</div>';
-      };
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

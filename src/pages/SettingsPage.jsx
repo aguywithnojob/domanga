@@ -19,32 +19,6 @@ export default function SettingsPage() {
   const [copied, setCopied]           = useState(false)
   const [budgetInput, setBudgetInput] = useState('')
   const [budgetSaved, setBudgetSaved] = useState(false)
-  const [notifStatus, setNotifStatus] = useState(
-    'Notification' in window ? Notification.permission : 'unsupported'
-  )
-  const [installPrompt, setInstallPrompt] = useState(() => window.__installPrompt ?? null)
-  const [isInstalled, setIsInstalled]     = useState(
-    window.matchMedia('(display-mode: standalone)').matches
-  )
-
-  useEffect(() => {
-    function onBeforeInstall(e) {
-      e.preventDefault()
-      window.__installPrompt = e
-      setInstallPrompt(e)
-    }
-    window.addEventListener('beforeinstallprompt', onBeforeInstall)
-    window.addEventListener('appinstalled', () => { setIsInstalled(true); setInstallPrompt(null); window.__installPrompt = null })
-    return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall)
-  }, [])
-
-  async function handleInstall() {
-    if (!installPrompt) return
-    installPrompt.prompt()
-    const { outcome } = await installPrompt.userChoice
-    if (outcome === 'accepted') setIsInstalled(true)
-    setInstallPrompt(null)
-  }
 
   useEffect(() => {
     async function load() {
@@ -81,15 +55,6 @@ export default function SettingsPage() {
     setCouple(prev => ({ ...prev, monthlyBudget: amt }))
     setBudgetSaved(true)
     setTimeout(() => setBudgetSaved(false), 2000)
-  }
-
-  async function requestNotifications() {
-    if (!('Notification' in window)) return
-    const result = await Notification.requestPermission()
-    setNotifStatus(result)
-    if (result === 'granted') {
-      await subscribePush(userProfile?.id)
-    }
   }
 
   return (
@@ -141,29 +106,7 @@ export default function SettingsPage() {
         </div>
         )}
 
-        {/* Notifications */}
-        <div className="bg-white rounded-xl p-4 shadow-card">
-          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Daily Nudge</p>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-karcha-text">Remind at 11 PM</p>
-              <p className="text-karcha-muted text-xs mt-0.5">
-                {notifStatus === 'granted' ? '✅ Notifications enabled' :
-                 notifStatus === 'denied'  ? '🚫 Blocked — enable in browser settings' :
-                 notifStatus === 'unsupported' ? 'Not supported on this device' :
-                 'Tap to allow notifications'}
-              </p>
-            </div>
-            {notifStatus === 'default' && (
-              <button
-                onClick={requestNotifications}
-                className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-semibold"
-              >
-                Enable
-              </button>
-            )}
-          </div>
-        </div>
+
 
         {/* Couple info */}
         {loading ? (
@@ -174,8 +117,10 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-accent-500/10 rounded-lg flex items-center justify-center text-lg">👫</div>
               <div>
-                <p className="font-semibold text-karcha-text text-sm">
-                  {couple.members.length === 2 ? 'Linked with partner ✓' : 'Waiting for partner…'}
+                <p className="font-semibold text-karcha-text text-sm flex items-center gap-1.5">
+                  {couple.members.length === 2
+                    ? <><span className="text-green-500">✓</span> Linked with partner</>
+                    : 'Waiting for partner…'}
                 </p>
                 <p className="text-karcha-muted text-xs">
                   {couple.members.length === 2 ? 'Expenses are shared' : 'Share the code below'}
@@ -197,34 +142,7 @@ export default function SettingsPage() {
           </div>
         ) : null}        
 
-        {/* Install App — hidden if already installed */}
-        {!isInstalled && (
-          <div className="bg-white rounded-xl p-4 shadow-card">
-            <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Install App</p>
-            {installPrompt ? (
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-karcha-text">Add to Home Screen</p>
-                  <p className="text-karcha-muted text-xs mt-0.5">Install for quick access</p>
-                </div>
-                <button
-                  onClick={handleInstall}
-                  className="flex-shrink-0 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-semibold active:scale-95 transition-transform"
-                >
-                  Install
-                </button>
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm font-semibold text-karcha-text">Add to Home Screen</p>
-                <p className="text-karcha-muted text-xs mt-1">
-                  On Android: browser menu (⋮) → Add to Home Screen<br />
-                  On iOS: Share button → Add to Home Screen
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+
 
         {/* Category Budgets — only when enableBudget flag is on */}
         {flags.enableBudget && (

@@ -1,12 +1,10 @@
 name: Daily Nudge
 
 on:
-  schedule:
-    # Target ~10 PM IST. IST = UTC+5:30, so 10:30 PM IST = 17:00 UTC.
-    # GitHub Actions cron is often delayed 15-30 min, so scheduling at 16:30 UTC
-    # to reliably land around 10-10:30 PM IST.
-    - cron: '30 16 * * *'
-  workflow_dispatch: # allow manual trigger for testing
+  # Replaced by in-app LocalNotifications daily nudge (useDailyNudge hook)
+  # schedule:
+  #   - cron: '30 16 * * *'
+  workflow_dispatch: # keep for manual testing only
 
 jobs:
   send-nudge:

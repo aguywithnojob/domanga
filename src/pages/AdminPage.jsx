@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { onSnapshot, doc } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { setFeatureFlag, getAdminCategories, saveAdminCategories, verifyAdminCredentials, getKeywordRules, saveKeywordRules } from '../firebase/admin'
+import { fetchAndPurgeSmsLogs } from '../utils/smsLogger'
 import { CATEGORIES } from '../utils/categories'
+import { useAuth } from '../contexts/AuthContext'
 import Header from '../components/common/Header'
 import Spinner from '../components/common/Spinner'
 
@@ -108,8 +110,76 @@ function AdminLogin({ onSuccess }) {
   )
 }
 
+// ── SMS Logs ─────────────────────────────────────────────────────────────────
+function SmsLogsSection({ uid }) {
+  const [logs, setLogs]       = useState(null)   // null = not loaded yet
+  const [loading, setLoading] = useState(false)
+
+  async function loadLogs() {
+    if (!uid) return
+    setLoading(true)
+    const entries = await fetchAndPurgeSmsLogs(uid)
+    setLogs(entries)
+    setLoading(false)
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '—'
+    const d = ts.toDate ? ts.toDate() : new Date(ts)
+    return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
+  }
+
+  return (
+    <Section icon="🪵" title="SMS Logs" subtitle="Last 24 h · auto-purged daily · max 100 entries">
+      {logs === null ? (
+        <button
+          onClick={loadLogs}
+          className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform"
+        >
+          Load Logs
+        </button>
+      ) : loading ? (
+        <div className="flex justify-center py-4"><Spinner /></div>
+      ) : logs.length === 0 ? (
+        <p className="text-sm text-karcha-muted italic">No logs in the last 24 hours.</p>
+      ) : (
+        <>
+          <button
+            onClick={loadLogs}
+            className="mb-3 text-xs text-primary-600 font-semibold active:opacity-60"
+          >
+            ↻ Refresh
+          </button>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {logs.map(log => (
+              <div
+                key={log.id}
+                className={`rounded-lg px-3 py-2 text-xs font-mono ${
+                  log.level === 'error' ? 'bg-red-50 border border-red-100' : 'bg-gray-50 border border-gray-100'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className={`font-bold uppercase tracking-widest text-[10px] ${log.level === 'error' ? 'text-red-500' : 'text-green-600'}`}>
+                    {log.level}
+                  </span>
+                  <span className="text-karcha-muted text-[10px]">{formatTime(log.createdAt)}</span>
+                </div>
+                <p className="text-karcha-text break-words">{log.message}</p>
+                {log.preview && (
+                  <p className="text-karcha-muted mt-1 break-words">"{log.preview}"</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </Section>
+  )
+}
+
 // ── Admin Panel ───────────────────────────────────────────────────────────────
 function AdminPanel() {
+  const { firebaseUser } = useAuth()
   // ─ Feature flags ─
   const [flags, setFlags]           = useState({})
   const [newFlagName, setNewFlagName] = useState('')
@@ -358,6 +428,9 @@ function AdminPanel() {
             </>
           )}
         </Section>
+
+        {/* ── SMS Logs ── */}
+        {flags.enablelog && <SmsLogsSection uid={firebaseUser?.uid} />}
 
       </div>
     </div>
