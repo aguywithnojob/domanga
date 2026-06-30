@@ -8,16 +8,29 @@ export const DEFAULT_KEYWORD_RULES = [
   { keyword: 'eatsure',     categoryId: 'food' },
   { keyword: 'dominos',     categoryId: 'food' },
   { keyword: "mcdonald",    categoryId: 'food' },
-  { keyword: 'bistro',         categoryId: 'food' },
+  { keyword: 'bistro',      categoryId: 'food' },
   { keyword: 'starbucks',   categoryId: 'food' },
-  { keyword: "cafe coffee", categoryId: 'food' },
+  { keyword: 'cafe coffee', categoryId: 'food' },
+  { keyword: 'pluxee',      categoryId: 'food' },
+  { keyword: 'sodexo',      categoryId: 'food' },
+  { keyword: 'meal card',   categoryId: 'food' },
+  { keyword: 'zomato',      categoryId: 'food' },
   // Grocery
-  { keyword: 'bigbasket',   categoryId: 'grocery' },
-  { keyword: 'big basket',  categoryId: 'grocery' },
-  { keyword: 'zepto',       categoryId: 'grocery' },
-  { keyword: 'blinkit',     categoryId: 'grocery' },
-  { keyword: 'instamart',       categoryId: 'grocery' },
-  { keyword: 'supermarket', categoryId: 'grocery' },
+  { keyword: 'bigbasket',      categoryId: 'grocery' },
+  { keyword: 'big basket',     categoryId: 'grocery' },
+  { keyword: 'zepto',          categoryId: 'grocery' },
+  { keyword: 'blinkit',        categoryId: 'grocery' },
+  { keyword: 'instamart',      categoryId: 'grocery' },
+  { keyword: 'supermarket',    categoryId: 'grocery' },
+  { keyword: 'reliance smart', categoryId: 'grocery' },
+  { keyword: 'reliance sm',    categoryId: 'grocery' },
+  { keyword: 'reliance fresh', categoryId: 'grocery' },
+  { keyword: 'smart bazaar',   categoryId: 'grocery' },
+  { keyword: 'dmart',          categoryId: 'grocery' },
+  { keyword: 'star bazaar',    categoryId: 'grocery' },
+  { keyword: 'spencer',        categoryId: 'grocery' },
+  { keyword: 'nature basket',  categoryId: 'grocery' },
+  { keyword: 'lulu hypermarket', categoryId: 'grocery' },
   // Transport
   { keyword: 'ola',         categoryId: 'transport' },
   { keyword: 'uber',        categoryId: 'transport' },
@@ -85,7 +98,43 @@ export function matchCategory(text, firestoreRules = []) {
 }
 
 /**
- * Parse OCR raw text into a list of candidate transactions.
+ * Extract a clean merchant / recipient name from full SMS text.
+ * Tries known patterns in priority order before falling back to generic.
+ */
+function extractDescription(text) {
+  // Pattern 1: "at MERCHANT" — take up to 2 words after "at"
+  // e.g. "at Reliance Sm NOIDA" → "Reliance Sm"
+  const atMatch = text.match(/\bat\s+([A-Za-z][A-Za-z0-9&']*(?:\s+[A-Za-z][A-Za-z0-9&']*)?)/i)
+
+  // Pattern 2: "PERSON credited" — UPI person transfer
+  // e.g. "AYUSHI GARG credited" → "AYUSHI GARG"
+  const creditedMatch = text.match(/([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,3})\s+credited/i)
+
+  // Pattern 3: "to NAME" before UPI/Ref — e.g. "paid to VENDOR UPI"
+  const toMatch = text.match(/\bto\s+([A-Za-z][A-Za-z0-9\s&']{2,30?})(?=\s+(?:upi|ref|via|\d)|[,.])/i)
+
+  // Pattern 4: "from WALLET wallet" — meal/prepaid card; return first word only (brand name)
+  // e.g. "from Pluxee Meal Card wallet" → "Pluxee"
+  const walletMatch = text.match(/from\s+([A-Za-z][A-Za-z0-9\s]*?)\s+wallet/i)
+
+  // Wallet takes highest priority — it's the most specific signal
+  if (walletMatch) return walletMatch[1].trim().split(/\s+/)[0]
+
+  if (atMatch) return atMatch[1].trim()
+
+  if (creditedMatch) {
+    const name = creditedMatch[1].trim()
+    // Skip if it looks like a bank sentence fragment
+    if (!/\b(icici|hdfc|sbi|axis|kotak|idbi|yes bank|pnb|bank|acct|account)\b/i.test(name)) {
+      return name
+    }
+  }
+
+  if (toMatch) return toMatch[1].trim()
+  return null
+}
+
+/**
  * Returns array of { description, amount, categoryId, date }
  *
  * Handles common Indian bank SMS / app formats:
@@ -123,8 +172,9 @@ export function parseOCRText(rawText, firestoreRules = []) {
     const end   = Math.min(fullText.length, match.index + 80)
     const ctx   = fullText.slice(start, end)
 
-    // Extract description — take first meaningful word cluster before/after amount
-    const descClean = ctx
+    // Smart description: try pattern-based extraction on full SMS first
+    const smartDesc = extractDescription(fullText)
+    const descClean = smartDesc || ctx
       .replace(amountRe, '')
       .replace(/paid|debit|credit|debited|credited|to|from|at|on|via|upi|ref|txn|transaction|no\.|#/gi, ' ')
       .replace(/\d{6,}/g, '') // strip long ref numbers
