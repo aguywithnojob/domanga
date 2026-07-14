@@ -1,0 +1,33 @@
+name: Sync Google Sheets → Firebase
+
+on:
+  schedule:
+    # 00:00 IST = 18:30 UTC
+    - cron: '30 18 * * *'
+  workflow_dispatch: # allow manual trigger for testing
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── 2. Python ────────────────────────────────────────────────────────────
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ── 3. Install dependencies ───────────────────────────────────────────────
+      - name: Install dependencies
+        run: pip install gspread google-auth firebase-admin
+
+      # ── 4. Run sync script ────────────────────────────────────────────────────
+      - name: Sync sheet to Firestore
+        run: python scripts/sync-sheets.py
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GOOGLE_SHEET_ID:          ${{ secrets.GOOGLE_SHEET_ID }}
+          GAUTAM_UID:               ${{ secrets.GAUTAM_UID }}
+          COUPLE_ID:                ${{ secrets.COUPLE_ID }}
