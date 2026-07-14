@@ -53,9 +53,9 @@ KEYWORD_RULES = [
     ('rapido',           'transport'),
     ('yulu',             'transport'),
     ('metro',            'transport'),
-    ('irctc',            'transport'),
-    ('indigo',           'transport'),
-    ('air india',        'transport'),
+    ('irctc',            'travel'),
+    ('indigo',           'travel'),
+    ('air india',        'travel'),
     ('bus',              'transport'),
     # Shopping
     ('amazon',           'shopping'),
@@ -168,6 +168,9 @@ def main():
         if len(row) >= 4
     ]
     print(f'Found {len(records)} data rows.')
+    if not len(records):
+        sheet.clear()
+        return
 
     # ── Firebase ───────────────────────────────────────────────────────────────
     print('Connecting to Firestore…')
@@ -186,7 +189,7 @@ def main():
         to_who   = str(row.get('to_who', '')).strip()
 
         # Skip empty / invalid rows
-        if not date_str and not amount_raw:
+        if not date_str and not amount_raw and not to_who:
             skipped += 1
             continue
         elif amount_raw == '' or amount_raw == '0' or amount_raw == '0.00' or amount_raw.lower() == 'inr' or amount_raw == '₹0':
@@ -220,13 +223,14 @@ def main():
         written += 1
         print(f'  ✓ Row {i}: ₹{amount} · {category_id} · {description}')
 
-    if written == 0:
+    if written == 0 and skipped == 0:
         print('No valid rows to write — sheet not cleared.')
         return
 
     # ── Commit batch ───────────────────────────────────────────────────────────
-    print(f'\nCommitting {written} expenses to Firestore…')
-    batch.commit()
+    if written > 0:
+        print(f'\nCommitting {written} expenses to Firestore…')
+        batch.commit()
     print(f'✅ Saved {written} expenses. ({skipped} rows skipped)')
 
     # ── Clear sheet (no header row to preserve) ───────────────────────────────
