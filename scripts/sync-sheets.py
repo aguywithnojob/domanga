@@ -66,10 +66,11 @@ KEYWORD_RULES = [
     ('meesho',           'shopping'),
     # Entertainment
     ('netflix',          'entertainment'),
-    ('hotstar',          'entertainment'),
+    ('jio hotstar',          'entertainment'),
     ('disney',           'entertainment'),
     ('spotify',          'entertainment'),
     ('youtube',          'entertainment'),
+    ('zee5',          'entertainment'),
     ('bookmyshow',       'entertainment'),
     ('pvr',              'entertainment'),
     ('inox',             'entertainment'),
@@ -88,10 +89,16 @@ KEYWORD_RULES = [
     ('adani',            'utilities'),
     ('airtel',           'utilities'),
     ('jio',              'utilities'),
+    ('jio fiber',              'utilities'),
     ('vi',               'utilities'),
     ('bsnl',             'utilities'),
     ('electricity',      'utilities'),
+    ('Uttar Pradesh P',      'utilities'),
     ('water bill',       'utilities'),
+    ('gym',       'gym'),
+    ('fitness',       'gym'),
+    ('health club',       'gym'),
+    ('swimming',       'gym'),
 ]
 
 DATE_FORMATS = [

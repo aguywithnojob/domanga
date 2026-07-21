@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { onSnapshot, doc } from 'firebase/firestore'
+import { onSnapshot, doc, collection, getCountFromServer, getDocs, query, limit } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { setFeatureFlag, getAdminCategories, saveAdminCategories, verifyAdminCredentials, getKeywordRules, saveKeywordRules } from '../firebase/admin'
 import { fetchAndPurgeSmsLogs } from '../utils/smsLogger'
@@ -177,6 +177,110 @@ function SmsLogsSection({ uid }) {
   )
 }
 
+// ── Firestore Health ──────────────────────────────────────────────────────────
+// Spark (free) plan quotas — see https://firebase.google.com/pricing
+const SPARK_STORAGE_BYTES = 1 * 1024 * 1024 * 1024 // 1 GiB
+const HEALTH_COLLECTIONS = ['expenses', 'users', 'couples', 'haulItems']
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+}
+
+function ProgressBar({ pct }) {
+  const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-green-500'
+  return (
+    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min(pct, 100)}%` }} />
+    </div>
+  )
+}
+
+function FirestoreHealthSection() {
+  const [result, setResult]   = useState(null) // { collections: [{name,count,bytes}], totalBytes }
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  async function checkHealth() {
+    setLoading(true)
+    setError('')
+    try {
+      const collections = []
+      for (const name of HEALTH_COLLECTIONS) {
+        const colRef = collection(db, name)
+        const countSnap = await getCountFromServer(colRef)
+        const count = countSnap.data().count
+
+        // Sample up to 20 docs to estimate average document size in bytes.
+        let avgBytes = 0
+        if (count > 0) {
+          const sampleSnap = await getDocs(query(colRef, limit(20)))
+          const sizes = sampleSnap.docs.map(d => new TextEncoder().encode(JSON.stringify(d.data())).length)
+          avgBytes = sizes.length ? sizes.reduce((a, b) => a + b, 0) / sizes.length : 0
+        }
+        collections.push({ name, count, bytes: Math.round(avgBytes * count) })
+      }
+      const totalBytes = collections.reduce((s, c) => s + c.bytes, 0)
+      setResult({ collections, totalBytes })
+    } catch (e) {
+      setError(e?.message || 'Could not read Firestore stats.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const pct = result ? (result.totalBytes / SPARK_STORAGE_BYTES) * 100 : 0
+
+  return (
+    <Section icon="🩺" title="Firestore Health" subtitle="Estimated storage usage on free Spark plan">
+      {result === null ? (
+        <button
+          onClick={checkHealth}
+          disabled={loading}
+          className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60"
+        >
+          {loading ? 'Checking…' : 'Check Health'}
+        </button>
+      ) : (
+        <>
+          <button
+            onClick={checkHealth}
+            disabled={loading}
+            className="mb-3 text-xs text-primary-600 font-semibold active:opacity-60 disabled:opacity-40"
+          >
+            {loading ? 'Refreshing…' : '↻ Refresh'}
+          </button>
+
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-sm font-bold text-karcha-text">Storage used (estimated)</p>
+              <p className="text-xs font-semibold text-karcha-muted">{pct.toFixed(3)}%</p>
+            </div>
+            <ProgressBar pct={pct} />
+            <p className="text-[11px] text-karcha-muted mt-1.5">
+              {formatBytes(result.totalBytes)} of {formatBytes(SPARK_STORAGE_BYTES)} free tier
+            </p>
+          </div>
+
+          <div className="space-y-1.5 mb-4">
+            {result.collections.map(c => (
+              <div key={c.name} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                <p className="text-sm font-semibold text-karcha-text">{c.name}</p>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-karcha-text">{c.count.toLocaleString()} docs</p>
+                  <p className="text-[10px] text-karcha-muted">{formatBytes(c.bytes)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+    </Section>
+  )
+}
+
 // ── Admin Panel ───────────────────────────────────────────────────────────────
 function AdminPanel() {
   const { firebaseUser } = useAuth()
@@ -302,6 +406,9 @@ function AdminPanel() {
 
       <div className="px-4 mt-4 space-y-3">
 
+        {/* ── Firestore Health ── */}
+        <FirestoreHealthSection />
+
         {/* ── Feature Flags ── */}
         <Section icon="🚩" title="Feature Flags" subtitle="Toggle features without redeploying" defaultOpen>
           {flagEntries.length === 0 && (
@@ -376,58 +483,6 @@ function AdminPanel() {
           </div>
         </Section>
 
-        {/* ── Keyword Rules (Scan) ── */}
-        <Section icon="🔍" title="Scan Keyword Rules" subtitle="Auto-detect categories from OCR text">
-          {kwRules === null ? (
-            <div className="flex justify-center py-4"><Spinner /></div>
-          ) : (
-            <>
-              {kwRules.length === 0 ? (
-                <p className="text-sm text-karcha-muted italic mb-4">No custom rules yet. Default mappings are built-in.</p>
-              ) : (
-                <div className="space-y-1 mb-4">
-                  {kwRules.map(rule => {
-                    const cat = allCategories.find(c => c.id === rule.categoryId)
-                    return (
-                      <div key={rule.keyword} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0">
-                        <span className="text-xl flex-shrink-0">{cat?.emoji ?? '📦'}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-karcha-text truncate">{rule.keyword}</p>
-                          <p className="text-[10px] text-karcha-muted">{cat?.label ?? rule.categoryId}</p>
-                        </div>
-                        <button onClick={() => deleteKeyword(rule.keyword)} disabled={kwSaving} className="text-red-400 text-lg font-bold w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 flex-shrink-0 disabled:opacity-40">×</button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-              <p className="text-[10px] font-semibold text-karcha-muted uppercase tracking-widest mb-2">Add Keyword Rule</p>
-              <p className="text-xs text-karcha-muted mb-3">Custom rules override built-in defaults.</p>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="text"
-                  placeholder="Merchant name (e.g. zomato)"
-                  value={kwKeyword}
-                  onChange={e => setKwKeyword(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addKeyword()}
-                  className="w-full border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500"
-                />
-                <select
-                  value={kwCatId}
-                  onChange={e => setKwCatId(e.target.value)}
-                  className="w-full border border-karcha-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500 bg-white"
-                >
-                  {allCategories.map(c => (
-                    <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
-                  ))}
-                </select>
-                <button onClick={addKeyword} disabled={kwSaving || !kwKeyword.trim()} className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform disabled:opacity-60">
-                  + Add Rule
-                </button>
-              </div>
-            </>
-          )}
-        </Section>
 
         {/* ── SMS Logs ── */}
         {flags.enablelog && <SmsLogsSection uid={firebaseUser?.uid} />}

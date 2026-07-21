@@ -1,5 +1,5 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ExpenseProvider } from './contexts/ExpenseContext'
 import { FlagProvider, useFlags } from './contexts/FeatureFlagContext'
@@ -43,12 +43,23 @@ function AppRoutes() {
   const { enabledebug, enablelog } = useFlags()
   const [toast, setToast]     = useState(null)
   const [debugLogs, setDebugLogs] = useState([])
+  const [panelVisible, setPanelVisible] = useState(false)
+  const hideTimerRef = useRef(null)
+
+  // Debug panel is gated behind the `enablelog` flag and auto-hides a few
+  // seconds after the last entry so it doesn't sit on screen indefinitely.
+  const DEBUG_PANEL_AUTOHIDE_MS = 6000
 
   const addDebugLog = (msg) => {
-    if (!enabledebug) return
+    if (!enablelog) return
     const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     setDebugLogs(prev => [`[${time}] ${msg}`, ...prev].slice(0, 30))
+    setPanelVisible(true)
+    clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = setTimeout(() => setPanelVisible(false), DEBUG_PANEL_AUTOHIDE_MS)
   }
+
+  useEffect(() => () => clearTimeout(hideTimerRef.current), [])
 
   const showToast = (title, body, ms = 4000) => {
     setToast({ title, body })
@@ -99,12 +110,12 @@ function AppRoutes() {
 
   return (
     <>
-      {/* Debug log panel — visible only when enabledebug is on */}
-      {enabledebug && debugLogs.length > 0 && (
+      {/* Debug log panel — visible only when enablelog is on, auto-hides after a few seconds */}
+      {enablelog && panelVisible && debugLogs.length > 0 && (
         <div className="fixed top-16 left-2 right-2 z-50 bg-black/90 text-green-400 rounded-xl p-3 max-h-48 overflow-y-auto font-mono text-[10px] space-y-0.5">
           <div className="flex justify-between items-center mb-1">
             <span className="text-white font-bold text-xs">SMS Debug Log</span>
-            <button onClick={() => setDebugLogs([])} className="text-red-400 text-xs">clear</button>
+            <button onClick={() => { setDebugLogs([]); setPanelVisible(false) }} className="text-red-400 text-xs">clear</button>
           </div>
           {debugLogs.map((l, i) => <div key={i}>{l}</div>)}
         </div>

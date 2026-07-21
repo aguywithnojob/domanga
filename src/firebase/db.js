@@ -183,10 +183,19 @@ function byNewestFirst(a, b) {
  * Real-time listener for expenses. Calls onChange with sorted array on every change.
  * Returns an unsubscribe function.
  */
-export function subscribeExpenses(coupleId, onChange) {
+// Real-time listener is capped to the last N months (default 12) to keep
+// Firestore read counts bounded regardless of account age. Older data is
+// never deleted — fetch it on demand with `getExpensesInRange`.
+export const EXPENSE_WINDOW_MONTHS = 12
+
+export function subscribeExpenses(coupleId, onChange, monthsBack = EXPENSE_WINDOW_MONTHS) {
+  const since = new Date()
+  since.setMonth(since.getMonth() - monthsBack)
+
   const q = query(
     collection(db, 'expenses'),
-    where('coupleId', '==', coupleId)
+    where('coupleId', '==', coupleId),
+    where('date', '>=', Timestamp.fromDate(since))
   )
   return onSnapshot(q, snap => {
     const data = snap.docs
@@ -198,6 +207,26 @@ export function subscribeExpenses(coupleId, onChange) {
       .sort(byNewestFirst)
     onChange(data)
   })
+}
+
+// One-time fetch for a custom date range that falls (partly or fully)
+// outside the real-time window above. Used by the Expenses page date
+// filter when the user picks a range older than EXPENSE_WINDOW_MONTHS.
+export async function getExpensesInRange(coupleId, from, to) {
+  const q = query(
+    collection(db, 'expenses'),
+    where('coupleId', '==', coupleId),
+    where('date', '>=', Timestamp.fromDate(from)),
+    where('date', '<=', Timestamp.fromDate(to))
+  )
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({
+      id: d.id,
+      ...d.data(),
+      date: d.data().date.toDate(),
+    }))
+    .sort(byNewestFirst)
 }
 
 export async function deleteExpense(expenseId) {

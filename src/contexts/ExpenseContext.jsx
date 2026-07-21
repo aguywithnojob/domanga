@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { useAuth } from './AuthContext'
 import { useFlags } from './FeatureFlagContext'
-import { subscribeExpenses, addExpense, deleteExpense, updateExpense, getCouple } from '../firebase/db'
+import { subscribeExpenses, addExpense, deleteExpense, updateExpense, getCouple, getExpensesInRange, EXPENSE_WINDOW_MONTHS } from '../firebase/db'
 
 const ExpenseContext = createContext(null)
 
@@ -57,8 +57,15 @@ export function ExpenseProvider({ children }) {
     await deleteExpense(id)
   }
 
+  // On-demand fetch for date ranges older than the real-time window
+  // (see EXPENSE_WINDOW_MONTHS). Does not touch the live `expenses` list.
+  async function fetchRange(from, to) {
+    if (!userProfile?.coupleId) return []
+    return getExpensesInRange(userProfile.coupleId, from, to)
+  }
+
   return (
-    <ExpenseContext.Provider value={{ expenses, budget, categoryBudgets, loading, addNew, edit, remove }}>
+    <ExpenseContext.Provider value={{ expenses, budget, categoryBudgets, loading, addNew, edit, remove, fetchRange, windowMonths: EXPENSE_WINDOW_MONTHS }}>
       {children}
     </ExpenseContext.Provider>
   )

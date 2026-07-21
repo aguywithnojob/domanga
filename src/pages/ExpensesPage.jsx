@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
 import { CATEGORIES, getCategoryMeta } from '../utils/categories'
 import { formatINR, formatDate, toInputDate, thisMonthRange } from '../utils/formatUtils'
-import { isWithinInterval, startOfDay, endOfDay } from 'date-fns'
+import { isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
 import Spinner from '../components/common/Spinner'
@@ -15,7 +15,7 @@ const FILTER_PERSON = ['all', 'me', 'partner']
 export default function ExpensesPage() {
   const { firebaseUser, userProfile, partnerProfile } = useAuth()
   const navigate = useNavigate()
-  const { expenses, loading, remove } = useExpenses()
+  const { expenses, loading, remove, fetchRange, windowMonths } = useExpenses()
   const partnerName = partnerProfile?.displayName || 'Partner'
 
   const { from: mFrom, to: mTo } = thisMonthRange()
@@ -26,8 +26,36 @@ export default function ExpensesPage() {
   const [personFilter, setPerson] = useState('all')
   const [deleting, setDeleting]   = useState(null)
   const [selected, setSelected]   = useState(null)
+  const [olderExpenses, setOlderExpenses] = useState(null)
+  const [olderLoading, setOlderLoading]   = useState(false)
+
+  // The real-time `expenses` list only covers the last `windowMonths`
+  // (see EXPENSE_WINDOW_MONTHS in db.js). If the picked range starts
+  // before that cutoff, fetch that range directly from Firestore instead.
+  const cutoff = subMonths(new Date(), windowMonths)
+  const needsOlderFetch = new Date(fromDate) < cutoff
+
+  useEffect(() => {
+    if (!needsOlderFetch) {
+      setOlderExpenses(null)
+      return
+    }
+    let cancelled = false
+    setOlderLoading(true)
+    fetchRange(new Date(fromDate), new Date(toDate)).then(data => {
+      if (!cancelled) {
+        setOlderExpenses(data)
+        setOlderLoading(false)
+      }
+    })
+    return () => { cancelled = true }
+  }, [needsOlderFetch, fromDate, toDate])
+
+  const sourceExpenses = needsOlderFetch ? (olderExpenses ?? []) : expenses
+  const isLoading = needsOlderFetch ? olderLoading : loading
+
   const filtered = useMemo(() => {
-    return expenses.filter(e => {
+    return sourceExpenses.filter(e => {
       const inRange = isWithinInterval(new Date(e.date), {
         start: startOfDay(new Date(fromDate)),
         end:   endOfDay(new Date(toDate)),
@@ -38,7 +66,8 @@ export default function ExpensesPage() {
         || (personFilter === 'partner' && e.paidBy !== firebaseUser?.uid)
       return inRange && inCat && inPerson
     })
-  }, [expenses, fromDate, toDate, catFilter, personFilter, firebaseUser])
+  }, [sourceExpenses, fromDate, toDate, catFilter, personFilter, firebaseUser])
+
 
   const total = filtered.reduce((s, e) => s + e.amount, 0)
 
@@ -112,7 +141,7 @@ export default function ExpensesPage() {
 
       {/* List */}
       <div className="px-5 space-y-2">
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-10"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 text-center shadow-card mt-4">
