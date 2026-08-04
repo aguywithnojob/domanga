@@ -19,8 +19,9 @@
 9. [Step 7 — Run Locally](#step-7--run-locally)
 10. [Step 8 — Deploy to GitHub Pages](#step-8--deploy-to-github-pages)
 11. [Step 9 — Add GitHub Pages Domain to Firebase](#step-9--add-github-pages-domain-to-firebase)
-12. [How Couple Linking Works](#how-couple-linking-works)
-13. [Project Structure](#project-structure)
+12. [How Sign-In Works](#how-sign-in-works)
+13. [How Couple Linking Works](#how-couple-linking-works)
+14. [Project Structure](#project-structure)
 
 ---
 
@@ -28,8 +29,8 @@
 
 - **Auth** — Sign in with Google as the primary method; a mobile number is collected and required for every account (used for account recovery/notifications); Phone OTP is also available as an alternate sign-in method; couple linked via 6-digit invite code
 - **Expenses** — add, edit, delete; tap any row for a full detail sheet with actions
-- **Insights** — monthly / weekly / custom range; category breakdown + You vs Partner chart
-- **Budgets** — monthly budget with progress bar; per-category limits with over-budget alerts
+- **Insights** — monthly / weekly / custom range; category breakdown with per-category budget progress bars + You vs Partner chart
+- **Budgets** — per-category monthly limits are the standard way to budget; the combined monthly total (with progress bar, shown on Dashboard and Insights) is automatically derived from your category budgets, with over-budget alerts
 - **Haul** — shared shopping/needs list; mark items picked up, auto-clear after 24h; accessible from BottomNav
 - **Real-time + Offline** — both screens sync instantly; expenses queue offline and auto-sync on reconnect
 - **PWA** — installable on iOS & Android; push notifications with in-app inbox
@@ -72,7 +73,6 @@
 
 > **Important:** Firebase Phone Auth requires a real phone number and will send actual SMS messages. For testing locally, you can add test phone numbers:
 > - In Authentication → Sign-in method → Phone, scroll down to **"Phone numbers for testing"**
-> - Add a test number like `+91 9999999999` with OTP `123456`
 > - This avoids SMS charges during development
 
 ---
@@ -192,9 +192,18 @@ Without this step, phone OTP will fail on the live site.
 
 ---
 
+## How Sign-In Works
+
+- **Google Sign-In** is the primary method — one tap, no password to remember. On the web it opens a Google popup; on the Android app it uses the native Google account picker.
+- **Phone OTP** is always available as an alternate method — enter your number, get a 6-digit SMS code, verify.
+- Every account requires a **mobile number** on file. Phone OTP accounts get it automatically from the number they signed in with. Google accounts are asked to add one during profile setup (used for account recovery and notifications) — it's mandatory since Google doesn't provide a phone number.
+- **Linking accounts:** if you originally signed up with Phone OTP and later want to also sign in with Google (or vice versa), go to **Settings → Sign-in Methods** and link the other method to your existing profile. This keeps the same account (same expenses, same couple) instead of creating a brand-new, empty one.
+
+---
+
 ## How Couple Linking Works
 
-1. **Person A** signs in with Google (or Phone OTP, if enabled) → adds a mobile number if not already on file → completes profile setup
+1. **Person A** signs in with Google (or Phone OTP) → adds a mobile number if not already on file → completes profile setup
 2. Person A gets a **6-digit couple invite code** (shown in Settings)
 3. **Person B** signs in → on Profile Setup screen, enters Person A's invite code
 4. Both are now linked under the same `coupleId`

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useFlags } from '../contexts/FeatureFlagContext'
-import { getCouple, setBudget, updateUser } from '../firebase/db'
-import { parseShorthand, filterAmountInput } from '../utils/formatUtils'
+import { getCouple, updateUser } from '../firebase/db'
 import { logout, linkGoogleAccount } from '../firebase/auth'
 import { subscribePush } from '../firebase/messaging'
 import Header from '../components/common/Header'
@@ -17,8 +16,6 @@ export default function SettingsPage() {
   const [couple, setCouple]           = useState(null)
   const [loading, setLoading]         = useState(true)
   const [copied, setCopied]           = useState(false)
-  const [budgetInput, setBudgetInput] = useState('')
-  const [budgetSaved, setBudgetSaved] = useState(false)
   const [linkingGoogle, setLinkingGoogle] = useState(false)
   const [linkError, setLinkError]         = useState('')
 
@@ -29,7 +26,6 @@ export default function SettingsPage() {
       if (userProfile?.coupleId) {
         const c = await getCouple(userProfile.coupleId)
         setCouple(c)
-        if (c?.monthlyBudget) setBudgetInput(String(c.monthlyBudget))
       }
       setLoading(false)
       // If permission already granted, ensure FCM token is saved to Firestore
@@ -50,15 +46,6 @@ export default function SettingsPage() {
     navigator.clipboard.writeText(couple.inviteCode)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
-
-  async function saveBudget() {
-    const amt = parseFloat(budgetInput)
-    if (!amt || amt <= 0 || !userProfile?.coupleId) return
-    await setBudget(userProfile.coupleId, amt)
-    setCouple(prev => ({ ...prev, monthlyBudget: amt }))
-    setBudgetSaved(true)
-    setTimeout(() => setBudgetSaved(false), 2000)
   }
 
   async function handleLinkGoogle() {
@@ -149,36 +136,6 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Monthly Budget — hidden when enableBudget flag is on (category budgets take over) */}
-        {!flags.enableBudget && (
-        <div className="bg-white rounded-xl p-4 shadow-card">
-          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Monthly Budget</p>
-          <div className="flex gap-2">
-            <div className="flex-1 min-w-0 flex items-center gap-2 border border-karcha-border rounded-lg px-3 py-2 focus-within:border-primary-500">
-              <span className="text-primary-600 font-bold">₹</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="e.g. 50000"
-                value={budgetInput}
-                onChange={e => setBudgetInput(filterAmountInput(e.target.value))}
-                onBlur={e => setBudgetInput(parseShorthand(e.target.value))}
-                className="flex-1 outline-none text-karcha-text font-semibold text-sm bg-transparent"
-              />
-            </div>
-            <button
-              onClick={saveBudget}
-              className="flex-shrink-0 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold active:scale-95 transition-transform whitespace-nowrap"
-            >
-              {budgetSaved ? '✓ Saved' : 'Save'}
-            </button>
-          </div>
-          <p className="text-karcha-muted text-xs mt-2">Shared budget for both of you.</p>
-        </div>
-        )}
-
-
-
         {/* Couple info */}
         {loading ? (
           <div className="flex justify-center py-4"><Spinner /></div>
@@ -215,19 +172,17 @@ export default function SettingsPage() {
 
 
 
-        {/* Category Budgets — only when enableBudget flag is on */}
-        {flags.enableBudget && (
-          <Link
-            to="/category-budgets"
-            className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-card"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">📊</span>
-              <p className="text-sm font-semibold text-karcha-text">Category Budgets</p>
-            </div>
-            <span className="text-karcha-muted text-sm">›</span>
-          </Link>
-        )}
+        {/* Category Budgets */}
+        <Link
+          to="/category-budgets"
+          className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-card"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">📊</span>
+            <p className="text-sm font-semibold text-karcha-text">Category Budgets</p>
+          </div>
+          <span className="text-karcha-muted text-sm">›</span>
+        </Link>
 
         {/* Scan — only when enablescan flag is on */}
         {flags.enablescan && (

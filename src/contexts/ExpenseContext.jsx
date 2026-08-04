@@ -1,13 +1,11 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { useAuth } from './AuthContext'
-import { useFlags } from './FeatureFlagContext'
 import { subscribeExpenses, addExpense, deleteExpense, updateExpense, getCouple, getExpensesInRange, EXPENSE_WINDOW_MONTHS } from '../firebase/db'
 
 const ExpenseContext = createContext(null)
 
 export function ExpenseProvider({ children }) {
   const { userProfile } = useAuth()
-  const flags = useFlags()
   const [expenses, setExpenses]           = useState([])
   const [rawBudget, setRawBudget]         = useState(null)
   const [categoryBudgets, setCatBudgets]  = useState({})
@@ -33,15 +31,12 @@ export function ExpenseProvider({ children }) {
     return unsub
   }, [userProfile?.coupleId])
 
-  // When enableBudget flag is on, derive total budget from sum of category budgets.
-  // Falls back to stored monthlyBudget for backward compatibility.
+  // Total budget is derived from the sum of category budgets, falling back to the
+  // legacy stored monthlyBudget for couples who set one before category budgets existed.
   const budget = useMemo(() => {
-    if (flags.enableBudget) {
-      const sum = Object.values(categoryBudgets).reduce((a, v) => a + (Number(v) || 0), 0)
-      return sum > 0 ? sum : rawBudget
-    }
-    return rawBudget
-  }, [flags.enableBudget, categoryBudgets, rawBudget])
+    const sum = Object.values(categoryBudgets).reduce((a, v) => a + (Number(v) || 0), 0)
+    return sum > 0 ? sum : rawBudget
+  }, [categoryBudgets, rawBudget])
 
   async function addNew(data) {
     // Don't await — addDoc resolves only when server confirms.

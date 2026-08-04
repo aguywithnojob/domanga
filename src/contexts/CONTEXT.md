@@ -79,9 +79,14 @@ FlagProvider        ← outermost (flags needed by AuthProvider children)
 **Current flags used in code:**
 | Flag | Default | Effect |
 |---|---|---|
-| `enableBudget` | unset | When `true`: shows Category Budgets link in Settings, shows per-category budget bars in Insights |
+| `enablescan` | unset | When `true`: shows Scan Receipt link in Settings, unlocks `/scan` |
+| `enabledebug` / `enablelog` | unset | Debug toast/log panel toggles (App.jsx) |
 
-**Used by:** DashboardPage, SettingsPage, AnalyticsPage, CategoryBudgetPage
+**Graduated (no longer flags, now permanent behavior):**
+- `enabletheme` — blue theme is now the fixed permanent theme (`useThemeColors()` no longer branches; `index.css` `:root` holds the blue values directly)
+- `enableBudget` — category budgets are now always the active budgeting mode (`ExpenseContext`'s `budget` is always derived from the sum of category budgets, falling back to legacy `monthlyBudget`); Category Budgets link is always shown in Settings, budget bars always show in Insights
+
+**Used by:** SettingsPage, ScanPage, App.jsx
 
 ---
 

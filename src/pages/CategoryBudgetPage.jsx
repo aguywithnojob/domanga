@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useFlags } from '../contexts/FeatureFlagContext'
 import { useCategories } from '../hooks/useCategories'
 import { getCouple, setCategoryBudgets } from '../firebase/db'
 import { parseShorthand, filterAmountInput } from '../utils/formatUtils'
@@ -11,7 +10,6 @@ import Spinner from '../components/common/Spinner'
 
 export default function CategoryBudgetPage() {
   const { userProfile } = useAuth()
-  const flags = useFlags()
   const navigate = useNavigate()
   const categories = useCategories()
   const [existingBudgets, setExistingBudgets] = useState({})
@@ -22,10 +20,6 @@ export default function CategoryBudgetPage() {
 
   // Load couple's saved budgets once
   useEffect(() => {
-    if (flags.enableBudget === false) {
-      navigate('/settings', { replace: true })
-      return
-    }
     async function load() {
       if (userProfile?.coupleId) {
         const c = await getCouple(userProfile.coupleId)
@@ -34,7 +28,7 @@ export default function CategoryBudgetPage() {
       setLoading(false)
     }
     load()
-  }, [userProfile, flags.enableBudget])
+  }, [userProfile])
 
   // Re-initialise inputs whenever categories (static + custom) or saved budgets change
   useEffect(() => {

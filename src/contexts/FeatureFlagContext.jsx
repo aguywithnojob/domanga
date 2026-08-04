@@ -6,17 +6,13 @@ const FlagContext = createContext({})
 
 export const useFlags = () => useContext(FlagContext)
 
-/** Returns theme-aware inline color values for use in SVG / Recharts / style props */
+/** Returns theme-aware inline color values for use in SVG / Recharts / style props.
+ * Blue was previously toggled by the `enabletheme` flag — graduated to the permanent theme. */
 export function useThemeColors() {
-  const { enabletheme } = useFlags()
-  return enabletheme ? {
+  return {
     primary:      '#2563eb', // blue-600
     primaryLight: '#bfdbfe', // blue-200
     accent:       '#f97316', // orange-500
-  } : {
-    primary:      '#16a34a', // green-600
-    primaryLight: '#bbf7d0', // green-200
-    accent:       '#ec4899', // pink-500
   }
 }
 

@@ -9,14 +9,7 @@
     <meta name="description" content="Kharcha — expense analyzer for couples" />
     <script>
       try {
-        var _f = JSON.parse(localStorage.getItem('karcha-flags') || '{}');
-        var _primary = _f.enabletheme ? '#2563eb' : '#16a34a';
-        document.documentElement.style.backgroundColor = _primary;
-        if (_f.enabletheme) {
-          document.documentElement.setAttribute('data-theme', 'blue');
-          var _m = document.querySelector('meta[name="theme-color"]');
-          if (_m) _m.content = '#2563eb';
-        }
+        document.documentElement.style.backgroundColor = '#2563eb';
       } catch(e) {}
     </script>
     <meta name="mobile-web-app-capable" content="yes" />

@@ -40,13 +40,12 @@
 - **Route:** `/dashboard`
 - **Purpose:** Home screen — month total, stats, recent expenses
 - **Key state:** `tab` (all/me/partner), `isOnline`, `newExpenseIds` (Set), `selected`, `deleting`
-- **Consumes:** `useAuth()`, `useExpenses()`, `useFlags()`
+- **Consumes:** `useAuth()`, `useExpenses()`, `useThemeColors()`
 - **Displays:**
   - Header: greeting + **⚙️ gear button** (top-right, navigates to `/settings`) + month total + You/Partner split bar — turns **grey** with wifi-off watermark when offline
   - 3-col stat grid: Budget chip · **Today** (today's total spend) · Week sparkline
   - Recent expenses tabbed by All / You / [PartnerName] — tapping a row opens `ExpenseDetailSheet`
   - New expense rows flash green → white for 2s when added via `onSnapshot`
-- **Feature flags:** `enableBudget` hides budget chip if `false`
 - **Partner name:** Uses `partnerProfile.displayName` from AuthContext
 
 ### `AddExpensePage.jsx`
@@ -82,24 +81,22 @@
 - **Route:** `/analytics`
 - **Purpose:** Insights — spending breakdown + charts
 - **Key state:** `preset` (month/week/last/custom), `fromDate`, `toDate`
-- **Consumes:** `useAuth()`, `useExpenses()`, `useFlags()`
+- **Consumes:** `useAuth()`, `useExpenses()`, `useThemeColors()`
 - **Charts:**
   - Dual-line budget sparkline: **blue** (`#3b82f6`) = You, **orange** (`#f97316`) = Partner — fixed for both devices
-  - Category breakdown (horizontal list, sorted desc) — when `enableBudget` flag is on and a category budget is set, shows `₹spent / ₹budget` with budget-relative progress bar (red if over)
+  - Category breakdown (horizontal list, sorted desc) — when a category budget is set, shows `₹spent / ₹budget` with budget-relative progress bar (red if over)
   - You vs [PartnerName] bar chart (Recharts)
-- **Feature flags:** `enableBudget` — when `true`, category breakdown shows per-category budget bars
 - **Notes:** Budget insight always uses current calendar month, regardless of preset.
 
 ### `SettingsPage.jsx`
 - **Route:** `/settings`
 - **Purpose:** User preferences + couple management
-- **Key state:** `couple`, `budgetInput`, `budgetSaved`, `notifStatus`, `installPrompt`, `isInstalled`, `linkingGoogle`, `linkError`
+- **Key state:** `couple`, `notifStatus`, `installPrompt`, `isInstalled`, `linkingGoogle`, `linkError`
 - **Consumes:** `useAuth()` (now also destructures `firebaseUser`)
 - **Firestore read:** `couples/{coupleId}`
-- **Firestore write:** `couples` (setBudget), `users` (fcmToken via subscribePush; `email` via `updateUser` after linking Google)
+- **Firestore write:** `users` (fcmToken via subscribePush; `email` via `updateUser` after linking Google)
 - **Sign-in Methods section:** Shows the account's phone number, and either the linked Google email or a "Link Google" button (calls `linkGoogleAccount()`) — lets an existing Phone-OTP user add Google as an alternate sign-in method on the *same* uid, so their phone/expenses aren't lost. `googleLinked` is derived from `firebaseUser.providerData`.
-- **Feature flags:** `enableBudget` — when `true`, shows Category Budgets link
-- **Notes:** Profile card + inline Sign out, monthly budget input, notification enable, invite code copy, PWA install button, Category Budgets link (flag-gated), Scan link (flag-gated), Admin link, app version footer.
+- **Notes:** Profile card + inline Sign out, notification enable, invite code copy, PWA install button, Category Budgets link, Scan link (flag-gated), Admin link, app version footer. Legacy simple monthly-budget input UI was removed — category budgets are the only way to set a budget now.
 - **Offline fix:** `subscribePush` called on mount if `Notification.permission === 'granted'` — ensures FCM token saved even if user previously accepted without button tap.
 - **Install prompt:** Captured in `main.jsx` via `window.__installPrompt` before React mounts to avoid missing early `beforeinstallprompt` event.
 - **Access:** Reachable via the ⚙️ gear icon button at the top-right of DashboardPage header (no longer in BottomNav).
@@ -108,12 +105,11 @@
 - **Route:** `/category-budgets`
 - **Purpose:** Set per-category monthly spend limits
 - **Key state:** `existingBudgets` (from Firestore), `inputs` (map of categoryId → string), `loading`, `saving`, `saved`
-- **Consumes:** `useAuth()`, `useFlags()`, `useCategories()`
+- **Consumes:** `useAuth()`, `useCategories()`
 - **Firestore read:** `couples/{coupleId}` via `getCouple` (pre-fills existing values)
 - **Firestore write:** `couples/{coupleId}.categoryBudgets` via `setCategoryBudgets`
-- **Feature flag:** Redirects to `/settings` if `enableBudget` is `false`
 - **Notes:** Uses `useCategories()` (real-time) so custom categories added via Admin panel appear here automatically. Two `useEffect`s — one loads saved budgets, one re-initialises inputs when categories or budgets change.
-- **Access:** Linked from SettingsPage only when `enableBudget` flag is `true`
+- **Access:** Always linked from SettingsPage (no longer flag-gated)
 
 ### `AdminPage.jsx`
 - **Route:** `/admin`

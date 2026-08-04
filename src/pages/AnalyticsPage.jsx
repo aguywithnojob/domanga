@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useExpenses } from '../contexts/ExpenseContext'
-import { useFlags, useThemeColors } from '../contexts/FeatureFlagContext'
+import { useThemeColors } from '../contexts/FeatureFlagContext'
 import { CATEGORY_COLORS, getCategoryMeta, CATEGORIES } from '../utils/categories'
 import { formatINR, toInputDate, thisMonthRange, thisWeekRange, lastMonthRange } from '../utils/formatUtils'
 import { isWithinInterval, startOfDay, endOfDay, eachDayOfInterval } from 'date-fns'
@@ -77,7 +77,6 @@ const CustomTooltip = ({ active, payload }) => {
 export default function AnalyticsPage() {
   const { userProfile, partnerProfile } = useAuth()
   const { expenses, budget, categoryBudgets, loading } = useExpenses()
-  const flags = useFlags()
   const { primary: primaryColor, accent: accentColor } = useThemeColors()
   const partnerName = partnerProfile?.displayName || 'Partner'
 
@@ -265,7 +264,7 @@ export default function AnalyticsPage() {
                 {categoryData.map((cat) => {
                   const catId = cat.id
                   const pct = total > 0 ? (cat.value / total) * 100 : 0
-                  const catBudget = flags.enableBudget ? (categoryBudgets?.[catId] ?? null) : null
+                  const catBudget = categoryBudgets?.[catId] ?? null
                   const budgetPct = catBudget ? Math.min((cat.value / catBudget) * 100, 100) : 0
                   const isOver = catBudget && cat.value > catBudget
                   return (

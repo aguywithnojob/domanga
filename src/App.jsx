@@ -23,21 +23,6 @@ import CategoryBudgetPage from './pages/CategoryBudgetPage'
 import ScanPage        from './pages/ScanPage'
 import HaulPage        from './pages/HaulPage'
 
-function ThemeApplier() {
-  const { enabletheme } = useFlags()
-  useEffect(() => {
-    const primaryColor = enabletheme ? '#2563eb' : '#d97706'
-    if (enabletheme) {
-      document.documentElement.setAttribute('data-theme', 'blue')
-    } else {
-      document.documentElement.removeAttribute('data-theme')
-    }
-    const meta = document.querySelector('meta[name="theme-color"]')
-    if (meta) meta.setAttribute('content', primaryColor)
-  }, [enabletheme])
-  return null
-}
-
 function AppRoutes() {
   const { firebaseUser, loading, userProfile } = useAuth()
   const { enabledebug, enablelog } = useFlags()
@@ -160,7 +145,6 @@ export default function App() {
   return (
     <HashRouter>
       <FlagProvider>
-        <ThemeApplier />
         <AuthProvider>
           <ExpenseProvider>
             <AppRoutes />
