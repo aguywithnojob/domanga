@@ -1,6 +1,6 @@
 {
   "appId": "com.karcha.app",
-  "appName": "Karcha",
+  "appName": "Kharcha",
   "webDir": "dist",
   "android": {
     "allowMixedContent": false,
@@ -13,6 +13,11 @@
       "backgroundColor": "#ffffff",
       "androidSplashResourceName": "splash",
       "showSpinner": false
+    },
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "120747076037-8o53oc8ub4k4s5i6f2ve33942snpse26.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
     }
   }
 }

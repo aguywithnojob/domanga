@@ -8,5 +8,6 @@ export default function RequireAuth() {
   if (!firebaseUser) return <Navigate to="/" replace />
   if (!userProfile?.displayName) return <Navigate to="/setup" replace />
   if (!userProfile?.coupleId) return <Navigate to="/setup" replace />
+  if (!userProfile?.phone) return <Navigate to="/setup" replace />
   return <Outlet />
 }

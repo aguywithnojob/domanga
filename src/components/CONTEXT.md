@@ -42,7 +42,8 @@ Route guard — wraps protected routes via `<Outlet />`.
 2. No `firebaseUser` → redirect `/`
 3. No `userProfile.displayName` → redirect `/setup`
 4. No `userProfile.coupleId` → redirect `/setup`
-5. All checks pass → `<Outlet />`
+5. No `userProfile.phone` → redirect `/setup` (mobile number is mandatory — Google sign-in doesn't provide one, so `ProfileSetupPage` collects it)
+6. All checks pass → `<Outlet />`
 
 ---
 

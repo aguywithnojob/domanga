@@ -97,7 +97,7 @@ function AppRoutes() {
     let unsub
     try {
       unsub = onForegroundMessage(payload => {
-        const { title = 'Karcha 💸', body = '' } = payload.notification ?? {}
+        const { title = 'Kharcha 💸', body = '' } = payload.notification ?? {}
         showToast(title, body)
       })
     } catch (e) {

@@ -50,7 +50,7 @@ async function main() {
   const response = await fcm.sendEachForMulticast({
     tokens,
     notification: {
-      title: 'Karcha 💸',
+      title: 'Kharcha 💸',
       body:  "Today’s expenses won’t log themselves (sadly)",
     },
     webpush: {

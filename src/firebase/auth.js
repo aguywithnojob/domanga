@@ -1,28 +1,39 @@
 import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
   signOut,
 } from 'firebase/auth'
+import { Capacitor } from '@capacitor/core'
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 import { auth } from './config'
 import { checkOtpRateLimit, recordOtpSend } from './db'
 
+let googleAuthInitialized = false
+
 /**
- * Sign in with email + password. Creates account if it does not exist yet.
- * Returns { userCredential, isNew } — isNew=true means account was just created.
+ * Sign in with Google.
+ * - Web (browser / PWA): uses Firebase's own OAuth popup — no extra config needed
+ *   beyond enabling the Google provider in the Firebase console.
+ * - Native (Capacitor/Android): uses the native Google Sign-In SDK via
+ *   @codetrix-studio/capacitor-google-auth, then exchanges the idToken for a
+ *   Firebase credential so the result lands in the same `auth` instance used
+ *   everywhere else (AuthContext, RequireAuth, etc).
+ * Returns a Firebase UserCredential in both cases.
  */
-export async function emailSignIn(email, password) {
-  try {
-    const cred = await signInWithEmailAndPassword(auth, email, password)
-    return { userCredential: cred, isNew: false }
-  } catch (err) {
-    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-      const cred = await createUserWithEmailAndPassword(auth, email, password)
-      return { userCredential: cred, isNew: true }
+export async function googleSignIn() {
+  if (Capacitor.isNativePlatform()) {
+    if (!googleAuthInitialized) {
+      GoogleAuth.initialize()
+      googleAuthInitialized = true
     }
-    throw err
+    const googleUser = await GoogleAuth.signIn()
+    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken)
+    return signInWithCredential(auth, credential)
   }
+  return signInWithPopup(auth, new GoogleAuthProvider())
 }
 
 /**

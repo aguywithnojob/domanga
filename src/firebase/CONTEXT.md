@@ -10,7 +10,7 @@
 | File | Purpose |
 |---|---|
 | `config.js` | Firebase app init. Exports `app`, `auth`, `db`. Throws if env vars missing. Enables Firestore offline persistence. |
-| `auth.js` | Phone OTP — send + verify. Rate limit check. reCAPTCHA setup. |
+| `auth.js` | Google Sign-In (primary) + Phone OTP (flag-gated secondary) — send + verify. Rate limit check. reCAPTCHA setup. |
 | `db.js` | All Firestore CRUD — users, couples, expenses, budget, OTP limits. Real-time `subscribeExpenses`. |
 | `admin.js` | Admin-only Firestore ops — feature flags, categories, admin auth. |
 | `messaging.js` | FCM push — get token, save to user doc, listen for foreground messages. |
@@ -26,7 +26,9 @@
 ---
 
 ## `auth.js`
-- **Exports:** `setupRecaptcha(containerId)`, `sendOTP(phone, containerId)`, `verifyOTP(otp)`, `logout()`
+- **Exports:** `googleSignIn()`, `setupRecaptcha(containerId)`, `sendOTP(phone, containerId)`, `verifyOTP(otp)`, `logout()`
+- **`googleSignIn()`:** Web uses `signInWithPopup` + Firebase's `GoogleAuthProvider` (no extra config beyond enabling Google in Firebase console). Native (Capacitor) uses `@codetrix-studio/capacitor-google-auth` to get a native idToken, then `signInWithCredential` so the session lands in the same `auth` instance. Native requires `serverClientId` (Firebase's auto-created "Web client ID") set in `capacitor.config.json` under `plugins.GoogleAuth`.
+- **Email/password auth removed** — Google Sign-In is now the primary method. Phone OTP remains as an always-available secondary method in `LoginPage` (not feature-flag gated — unauthenticated users can't reliably read feature flags before signing in, so gating it would risk hiding it for first-time users).
 - **Calls:** `checkOtpRateLimit` + `recordOtpSend` from `db.js`
 - **Firestore read:** `otpLimits/{phoneDigits}`
 - **Notes:** Phone must be in `+91XXXXXXXXXX` format. `confirmationResult` stored on `window`.

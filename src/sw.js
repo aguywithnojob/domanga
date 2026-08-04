@@ -26,7 +26,7 @@ if (projectId) {
   const messaging = getMessaging(app)
 
   onBackgroundMessage(messaging, payload => {
-    const { title = 'Karcha', body = '' } = payload.notification ?? {}
+    const { title = 'Kharcha', body = '' } = payload.notification ?? {}
     self.registration.showNotification(title, {
       body,
       icon: '/domanga/icon-192.png',

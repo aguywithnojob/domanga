@@ -18,8 +18,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Karcha',
-        short_name: 'Karcha',
+        name: 'Kharcha',
+        short_name: 'Kharcha',
         description: 'Expense tracker for couples',
         theme_color: '#2563eb',
         background_color: '#ffffff',

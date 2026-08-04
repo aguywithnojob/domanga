@@ -1,4 +1,4 @@
-# Karcha 💸
+# Kharcha 💸
 
 > Expense analyzer for couples — track, split, and analyze shared spending together.
 
@@ -26,7 +26,7 @@
 
 ## Features
 
-- **Auth** — Phone OTP or Email/Password; couple linked via 6-digit invite code
+- **Auth** — Sign in with Google as the primary method; a mobile number is collected and required for every account (used for account recovery/notifications); Phone OTP is also available as an alternate sign-in method; couple linked via 6-digit invite code
 - **Expenses** — add, edit, delete; tap any row for a full detail sheet with actions
 - **Insights** — monthly / weekly / custom range; category breakdown + You vs Partner chart
 - **Budgets** — monthly budget with progress bar; per-category limits with over-budget alerts
@@ -44,7 +44,7 @@
 |---|---|
 | UI Framework | React 18 + Vite |
 | Styling | Tailwind CSS v3 |
-| Auth | Firebase Phone OTP |
+| Auth | Firebase Auth — Google Sign-In + Phone OTP |
 | Database | Firebase Firestore |
 | Charts | Recharts |
 | Routing | React Router v6 (HashRouter) |
@@ -57,7 +57,7 @@
 
 1. Go to [https://console.firebase.google.com](https://console.firebase.google.com)
 2. Click **"Add project"**
-3. Name it `karcha` (or anything you prefer)
+3. Name it `kharcha` (or anything you prefer)
 4. Disable Google Analytics (not needed) → Click **"Create project"**
 5. Wait for the project to be created → Click **"Continue"**
 
@@ -92,15 +92,15 @@
 1. In the Firebase Console, click the ⚙️ gear icon → **"Project settings"**
 2. Scroll down to **"Your apps"** section
 3. Click the **"</>"** (Web) icon to add a web app
-4. Enter app nickname: `karcha-web` → Click **"Register app"**
+4. Enter app nickname: `kharcha-web` → Click **"Register app"**
 5. You'll see a config object like this — **copy all the values**:
 
 ```js
 const firebaseConfig = {
   apiKey: "AIza...",
-  authDomain: "karcha-xxxxx.firebaseapp.com",
-  projectId: "karcha-xxxxx",
-  storageBucket: "karcha-xxxxx.appspot.com",
+  authDomain: "kharcha-xxxxx.firebaseapp.com",
+  projectId: "kharcha-xxxxx",
+  storageBucket: "kharcha-xxxxx.appspot.com",
   messagingSenderId: "123456789",
   appId: "1:123456789:web:abcdef123456"
 };
@@ -133,9 +133,9 @@ cp .env.example .env.local
 
 ```env
 VITE_FIREBASE_API_KEY=AIza...
-VITE_FIREBASE_AUTH_DOMAIN=karcha-xxxxx.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=karcha-xxxxx
-VITE_FIREBASE_STORAGE_BUCKET=karcha-xxxxx.appspot.com
+VITE_FIREBASE_AUTH_DOMAIN=kharcha-xxxxx.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=kharcha-xxxxx
+VITE_FIREBASE_STORAGE_BUCKET=kharcha-xxxxx.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
 VITE_FIREBASE_APP_ID=1:123456789:web:abcdef123456
 ```
@@ -194,7 +194,7 @@ Without this step, phone OTP will fail on the live site.
 
 ## How Couple Linking Works
 
-1. **Person A** signs in with their phone number → completes profile setup
+1. **Person A** signs in with Google (or Phone OTP, if enabled) → adds a mobile number if not already on file → completes profile setup
 2. Person A gets a **6-digit couple invite code** (shown in Settings)
 3. **Person B** signs in → on Profile Setup screen, enters Person A's invite code
 4. Both are now linked under the same `coupleId`
@@ -260,7 +260,7 @@ All amounts are displayed in **Indian Rupees (₹ INR)**.
 
 ## SMS Auto-Ingestion (Android)
 
-Karcha can automatically detect incoming bank transaction SMS and save them as expenses — no manual entry needed.
+Kharcha can automatically detect incoming bank transaction SMS and save them as expenses — no manual entry needed.
 
 ### How it works
 
@@ -318,7 +318,7 @@ No Android Studio needed. Push to `main` → GitHub builds the APK → download 
 
 1. Go to your GitHub repo → **Actions** tab
 2. Click the latest **"Build Android APK"** run
-3. Scroll to **Artifacts** → download `karcha-debug-{run_number}`
+3. Scroll to **Artifacts** → download `kharcha-debug-{run_number}`
 4. Extract the `.apk` file and transfer to your phone (WhatsApp / Google Drive / USB)
 
 ### Install on your phone

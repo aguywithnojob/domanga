@@ -87,7 +87,7 @@ async function main() {
     const response = await fcm.sendEachForMulticast({
       tokens,
       notification: {
-        title: '📊 Weekly Karcha Summary',
+        title: '📊 Weekly Kharcha Summary',
         body,
       },
       webpush: {

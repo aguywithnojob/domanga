@@ -27,7 +27,7 @@ export function useDailyNudge(enabled) {
         await LocalNotifications.schedule({
           notifications: [{
             id:        NUDGE_NOTIF_ID,
-            title:     'Karcha 💸',
+            title:     'Kharcha 💸',
             body:      "Don't forget to log today's expenses!",
             channelId: 'sms-expense',   // reuse existing channel (has sound)
             schedule: {

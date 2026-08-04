@@ -17,7 +17,7 @@ const {
 
 if (!VITE_FIREBASE_API_KEY || !VITE_FIREBASE_PROJECT_ID) {
   throw new Error(
-    '[Karcha] Firebase config missing. Did you create .env.local from .env.example and fill in your Firebase keys?'
+    '[Kharcha] Firebase config missing. Did you create .env.local from .env.example and fill in your Firebase keys?'
   )
 }
 

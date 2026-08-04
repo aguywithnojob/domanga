@@ -1,6 +1,6 @@
 # .github/ — Context Summary
 
-> CI/CD automation for Karcha. Currently one workflow.
+> CI/CD automation for Kharcha. Currently one workflow.
 > **Keep this updated when new workflows or secrets are added.**
 
 ---

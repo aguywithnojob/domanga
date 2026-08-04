@@ -52,7 +52,7 @@ async function main() {
     tokens,
     notification: {
       title: `🗓️ ${monthName} is here!`,
-      body: "New month, fresh slate. Set your budget in Karcha 💸",
+      body: "New month, fresh slate. Set your budget in Kharcha 💸",
     },
     webpush: {
       notification: {

@@ -9,11 +9,11 @@
 
 ### `LoginPage.jsx`
 - **Route:** `/`
-- **Purpose:** Phone number input, sends OTP
-- **Key state:** `phone`, `error`, `loading`
-- **Calls:** `checkOtpRateLimit`, `sendOTP` (from `firebase/auth.js`)
-- **Navigates to:** `/verify` on success
-- **Notes:** Formats phone → `+91{10digits}`. Has invisible reCAPTCHA container div.
+- **Purpose:** Sign in — Google is the primary/default method; Phone OTP is always available as a secondary tab
+- **Key state:** `tab` (google/phone), `phone`, `error`, `loading`
+- **Calls:** `googleSignIn()`, `sendOTP()` (from `firebase/auth.js`), `getUser`, `refreshProfile`
+- **Navigates to:** `/setup` (missing displayName/coupleId/phone) or `/dashboard` after Google sign-in; `/verify` after sending OTP
+- **Notes:** Email/password auth was removed in favor of Google. Phone OTP is not feature-flag gated — first-time users are unauthenticated, so they may never receive real feature flag data (Firestore reads of `config/features` can require auth), which would incorrectly hide the tab. Phone formats → `+91{10digits}`. Has invisible reCAPTCHA container div.
 
 ### `OTPPage.jsx`
 - **Route:** `/verify`
@@ -25,11 +25,12 @@
 
 ### `ProfileSetupPage.jsx`
 - **Route:** `/setup`
-- **Purpose:** Create name + create couple OR join partner's couple
-- **Key state:** `name`, `mode` (create/join), `code`, `inviteCode`
-- **Calls:** `createUser`, `createCouple`, `joinCouple`, `refreshProfile`
+- **Purpose:** Create name + create couple OR join partner's couple. Also collects a **mandatory mobile number** when the sign-in method didn't provide one (e.g. Google) — required going forward for all accounts.
+- **Key state:** `name`, `phone`, `mode` (create/join), `code`, `inviteCode`, `existingProfile`, `profileLoaded`
+- **Calls:** `getUser`, `createUser`, `updateUser`, `createCouple`, `joinCouple`, `refreshProfile`
 - **Firestore write:** `users`, `couples`
-- **Notes:** Idempotent — checks `getUser` before `createUser`. Shows invite code after creating couple.
+- **Derived:** `phoneRequired` = true when neither `firebaseUser.phoneNumber` nor the stored profile has a phone. `onlyNeedsPhone` = true when displayName + coupleId already exist but phone is still missing (renders a compact phone-only screen instead of the full form).
+- **Notes:** Idempotent — loads existing profile via `getUser` on mount (shows `<PageLoader/>` until loaded) instead of re-fetching only inside `handleSubmit`. Shows invite code after creating couple.
 
 ---
 

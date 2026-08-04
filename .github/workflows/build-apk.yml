@@ -82,14 +82,14 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: karcha-debug-${{ github.run_number }}
+          name: kharcha-debug-${{ github.run_number }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
           if-no-files-found: error
 
       # ── 10. Publish as GitHub Release (direct download link) ─────────────────
       - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk karcha.apk
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk kharcha.apk
 
       - name: Delete existing latest release
         run: gh release delete latest --yes --cleanup-tag || true
@@ -98,9 +98,9 @@ jobs:
 
       - name: Create GitHub Release with APK
         run: |
-          gh release create latest karcha.apk \
-            --title "Karcha " \
-            --notes "commit ${{ github.sha }}. Download karcha.apk and install on your Android phone." \
+          gh release create latest kharcha.apk \
+            --title "Kharcha " \
+            --notes "commit ${{ github.sha }}. Download kharcha.apk and install on your Android phone." \
             --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
