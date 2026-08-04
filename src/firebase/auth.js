@@ -4,6 +4,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithCredential,
+  linkWithPopup,
+  linkWithCredential,
   signOut,
 } from 'firebase/auth'
 import { Capacitor } from '@capacitor/core'
@@ -34,6 +36,29 @@ export async function googleSignIn() {
     return signInWithCredential(auth, credential)
   }
   return signInWithPopup(auth, new GoogleAuthProvider())
+}
+
+/**
+ * Link a Google account to the currently signed-in user — used by existing
+ * Phone-OTP users who want to also be able to sign in with Google, without
+ * losing their uid (and therefore their mobile number + expenses, which are
+ * all keyed off that uid in Firestore).
+ * Throws `auth/credential-already-in-use` if that Google account is already
+ * tied to a different Firebase user — Firebase refuses to link in that case
+ * since it would silently merge two separate accounts.
+ */
+export async function linkGoogleAccount() {
+  if (!auth.currentUser) throw new Error('You must be signed in to link an account.')
+  if (Capacitor.isNativePlatform()) {
+    if (!googleAuthInitialized) {
+      GoogleAuth.initialize()
+      googleAuthInitialized = true
+    }
+    const googleUser = await GoogleAuth.signIn()
+    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken)
+    return linkWithCredential(auth.currentUser, credential)
+  }
+  return linkWithPopup(auth.currentUser, new GoogleAuthProvider())
 }
 
 /**

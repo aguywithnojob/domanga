@@ -93,10 +93,11 @@
 ### `SettingsPage.jsx`
 - **Route:** `/settings`
 - **Purpose:** User preferences + couple management
-- **Key state:** `couple`, `budgetInput`, `budgetSaved`, `notifStatus`, `installPrompt`, `isInstalled`
-- **Consumes:** `useAuth()`
+- **Key state:** `couple`, `budgetInput`, `budgetSaved`, `notifStatus`, `installPrompt`, `isInstalled`, `linkingGoogle`, `linkError`
+- **Consumes:** `useAuth()` (now also destructures `firebaseUser`)
 - **Firestore read:** `couples/{coupleId}`
-- **Firestore write:** `couples` (setBudget), `users` (fcmToken via subscribePush)
+- **Firestore write:** `couples` (setBudget), `users` (fcmToken via subscribePush; `email` via `updateUser` after linking Google)
+- **Sign-in Methods section:** Shows the account's phone number, and either the linked Google email or a "Link Google" button (calls `linkGoogleAccount()`) — lets an existing Phone-OTP user add Google as an alternate sign-in method on the *same* uid, so their phone/expenses aren't lost. `googleLinked` is derived from `firebaseUser.providerData`.
 - **Feature flags:** `enableBudget` — when `true`, shows Category Budgets link
 - **Notes:** Profile card + inline Sign out, monthly budget input, notification enable, invite code copy, PWA install button, Category Budgets link (flag-gated), Scan link (flag-gated), Admin link, app version footer.
 - **Offline fix:** `subscribePush` called on mount if `Notification.permission === 'granted'` — ensures FCM token saved even if user previously accepted without button tap.

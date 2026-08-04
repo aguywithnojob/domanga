@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useFlags } from '../contexts/FeatureFlagContext'
-import { getCouple, setBudget } from '../firebase/db'
+import { getCouple, setBudget, updateUser } from '../firebase/db'
 import { parseShorthand, filterAmountInput } from '../utils/formatUtils'
-import { logout } from '../firebase/auth'
+import { logout, linkGoogleAccount } from '../firebase/auth'
 import { subscribePush } from '../firebase/messaging'
 import Header from '../components/common/Header'
 import BottomNav from '../components/common/BottomNav'
 import Spinner from '../components/common/Spinner'
 
 export default function SettingsPage() {
-  const { userProfile, refreshProfile } = useAuth()
+  const { firebaseUser, userProfile, refreshProfile } = useAuth()
   const flags = useFlags()
   const navigate = useNavigate()
   const [couple, setCouple]           = useState(null)
@@ -19,6 +19,10 @@ export default function SettingsPage() {
   const [copied, setCopied]           = useState(false)
   const [budgetInput, setBudgetInput] = useState('')
   const [budgetSaved, setBudgetSaved] = useState(false)
+  const [linkingGoogle, setLinkingGoogle] = useState(false)
+  const [linkError, setLinkError]         = useState('')
+
+  const googleLinked = !!firebaseUser?.providerData?.some(p => p.providerId === 'google.com')
 
   useEffect(() => {
     async function load() {
@@ -57,6 +61,34 @@ export default function SettingsPage() {
     setTimeout(() => setBudgetSaved(false), 2000)
   }
 
+  async function handleLinkGoogle() {
+    setLinkError('')
+    setLinkingGoogle(true)
+    try {
+      const result = await linkGoogleAccount()
+      if (result?.user?.email && userProfile?.id) {
+        await updateUser(userProfile.id, { email: result.user.email })
+      }
+      await refreshProfile()
+    } catch (err) {
+      if (err.code === 'auth/credential-already-in-use') {
+        setLinkError('That Google account is already linked to a different profile. Try a different Google account.')
+      } else if (err.code === 'auth/provider-already-linked') {
+        setLinkError('A Google account is already linked to this profile.')
+      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        // user cancelled — no error message needed
+      } else if (err.code === 'auth/requires-recent-login') {
+        setLinkError('Please sign out and sign back in, then try linking again.')
+      } else if (err.code === 'auth/network-request-failed') {
+        setLinkError('Network error. Check your connection.')
+      } else {
+        setLinkError('Could not link Google account. Please try again.')
+      }
+    } finally {
+      setLinkingGoogle(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-karcha-bg pb-28">
       <Header title="Settings" />
@@ -76,6 +108,43 @@ export default function SettingsPage() {
               Sign out
             </button>
           </div>
+        </div>
+
+        {/* Sign-in methods — lets existing Phone-OTP users also link Google without losing their uid/data */}
+        <div className="bg-white rounded-xl p-4 shadow-card">
+          <p className="text-xs font-semibold text-karcha-muted uppercase tracking-widest mb-3">Sign-in Methods</p>
+
+          <div className="flex items-center justify-between py-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-lg flex-shrink-0">📱</span>
+              <p className="text-sm font-semibold text-karcha-text truncate">{userProfile?.phone || '—'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between py-1.5 border-t border-gray-50 mt-1 pt-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-lg flex-shrink-0">🔑</span>
+              {googleLinked ? (
+                <p className="text-sm font-semibold text-karcha-text truncate">{firebaseUser?.email}</p>
+              ) : (
+                <p className="text-sm text-karcha-muted">Google not linked</p>
+              )}
+            </div>
+            {!googleLinked && (
+              <button
+                onClick={handleLinkGoogle}
+                disabled={linkingGoogle}
+                className="flex-shrink-0 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-semibold active:scale-95 transition-transform disabled:opacity-60"
+              >
+                {linkingGoogle ? 'Linking…' : 'Link Google'}
+              </button>
+            )}
+          </div>
+
+          {linkError && <p className="text-red-500 text-xs mt-2">{linkError}</p>}
+          <p className="text-karcha-muted text-[11px] mt-2">
+            Linking Google lets you sign in either way — your mobile number and expenses stay the same.
+          </p>
         </div>
 
         {/* Monthly Budget — hidden when enableBudget flag is on (category budgets take over) */}

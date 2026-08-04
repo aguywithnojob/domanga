@@ -26,8 +26,9 @@
 ---
 
 ## `auth.js`
-- **Exports:** `googleSignIn()`, `setupRecaptcha(containerId)`, `sendOTP(phone, containerId)`, `verifyOTP(otp)`, `logout()`
+- **Exports:** `googleSignIn()`, `linkGoogleAccount()`, `setupRecaptcha(containerId)`, `sendOTP(phone, containerId)`, `verifyOTP(otp)`, `logout()`
 - **`googleSignIn()`:** Web uses `signInWithPopup` + Firebase's `GoogleAuthProvider` (no extra config beyond enabling Google in Firebase console). Native (Capacitor) uses `@codetrix-studio/capacitor-google-auth` to get a native idToken, then `signInWithCredential` so the session lands in the same `auth` instance. Native requires `serverClientId` (Firebase's auto-created "Web client ID") set in `capacitor.config.json` under `plugins.GoogleAuth`.
+- **`linkGoogleAccount()`:** Same web/native split as `googleSignIn()`, but uses `linkWithPopup`/`linkWithCredential` against `auth.currentUser` so an existing Phone-OTP user keeps their uid (and therefore their Firestore `users/{uid}` doc — phone, expenses, coupleId) while adding Google as an alternate sign-in method. Used by `SettingsPage`'s "Link Google" button. Throws `auth/credential-already-in-use` if that Google account is already tied to a different Firebase user (Firebase refuses to silently merge two accounts — the UI surfaces this as an error message telling the user to pick a different Google account).
 - **Email/password auth removed** — Google Sign-In is now the primary method. Phone OTP remains as an always-available secondary method in `LoginPage` (not feature-flag gated — unauthenticated users can't reliably read feature flags before signing in, so gating it would risk hiding it for first-time users).
 - **Calls:** `checkOtpRateLimit` + `recordOtpSend` from `db.js`
 - **Firestore read:** `otpLimits/{phoneDigits}`
