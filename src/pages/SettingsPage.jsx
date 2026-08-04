@@ -71,6 +71,7 @@ export default function SettingsPage() {
       }
       await refreshProfile()
     } catch (err) {
+      console.error('[LinkGoogleAccount]', err)
       if (err.code === 'auth/credential-already-in-use') {
         setLinkError('That Google account is already linked to a different profile. Try a different Google account.')
       } else if (err.code === 'auth/provider-already-linked') {
@@ -82,7 +83,8 @@ export default function SettingsPage() {
       } else if (err.code === 'auth/network-request-failed') {
         setLinkError('Network error. Check your connection.')
       } else {
-        setLinkError('Could not link Google account. Please try again.')
+        // TODO: remove this raw error dump once native Google Sign-In is confirmed working — temporary for debugging
+        setLinkError(`Could not link Google account: ${err?.code || ''} ${err?.message || String(err)}`.trim())
       }
     } finally {
       setLinkingGoogle(false)

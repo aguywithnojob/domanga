@@ -49,6 +49,7 @@ export default function LoginPage() {
         navigate('/dashboard', { replace: true })
       }
     } catch (err) {
+      console.error('[GoogleSignIn]', err)
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         // user intentionally cancelled — no error message needed
       } else if (err.code === 'auth/network-request-failed') {
@@ -56,7 +57,8 @@ export default function LoginPage() {
       } else if (err.code === 'auth/account-exists-with-different-credential') {
         setError('This email is already linked to a different sign-in method.')
       } else {
-        setError('Google sign-in failed. Please try again.')
+        // TODO: remove this raw error dump once native Google Sign-In is confirmed working — temporary for debugging
+        setError(`Google sign-in failed: ${err?.code || ''} ${err?.message || String(err)}`.trim())
       }
     } finally {
       setLoading(false)
